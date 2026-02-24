@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+}
+
+model ContentSection {
+  id              Int      @id @default(autoincrement())
+  side            String   // "LEFT" or "RIGHT" or "GLOBAL"
+  title           String
+  content         String
+  isGlobalProfile Boolean  @default(false)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GlobalSettings {
+  id               Int      @id @default(autoincrement())
+  title            String
+  subtitle         String
+  email            String
+  bio              String
+  instructions     String
+  instructionsBottom String @default("")
+  updatedAt        DateTime @updatedAt
+}

@@ -1,0 +1,39 @@
+•	Coursework: OOP (C++), Discrete Math, Behavioral Psychology, Data Structures & Algorithms, Probability & Statistics, Calculus I & II, Cognitive Neuroscience, University Physics I & II  • NSF Access Program Fellow (20 hrs/wk): Deep learning research in assistive & behavioral diagnostics
+--------------------
+
+EXPERIENCE
+ML Operations Summer Intern  |  Careerlink AI (NVIDIA & AWS-backed)                                                                 Boston, MA   May 2025 – August 2025
+•	Scaled Docker/Kubernetes microservices infrastructure on AWS, supporting 42.6% DAU growth & reliable onboarding for 9.5K platform users. 
+•	Automated GitHub Actions CI/CD pipelines to streamline testing & redeployment of LangChain authentication service, cutting bot spam 64%. 
+•	Optimized containerized model serving endpoints, reducing API inference latency to 3.4s for neurodiverse users requiring low-friction access.
+•	Orchestrated ML automation workflows via n8n and MCP, managing pipeline orchestration & shipping 4 feature releases under Agile/Kanban. 
+•	Monitored model inference performance using Grafana and W&B; co-produced 70K-view Manim visualizations for accessible ML education.
+Deep Learning Research Intern  |  NJBDA Data Science Research Lab, NSF Access Program HPC                               Rutgers, NJ   July 2024 – May 2025
+•	Deployed 3 Docker-containerized, REST API diagnostic pipelines for Parkinson's disease & autism spectrum detection at 92%+ test accuracy. 
+•	Optimized & containerized assistive AI video agent (SadTalker) via model weight quantization, cutting inference runtime from 15 to 3 mins. 
+•	Architected AWS MLOps infrastructure using EC2, Terraform IaC, GitHub Actions CI/CD pipelines, reducing model deployment time by 67%.
+•	Logged 850 training epochs via the W&B experiment tracking; applied Grad-CAM explainability for disability diagnostic model transparency.
+--------------------
+ACCESSIBILITY PROJECTS
+Non-Verbal Sentiment Analysis via CNN-ViT: From Pet Behavior to Assistive AAC Applications                                                                          Rutgers, NJ
+•	Pioneered a deep learning model decoding non-verbal facial micro-expressions in pets, with translational potential for Augmentative & Alternative Communication (AAC) systems serving individuals with communication needs  such as autism, cerebral palsy, or speech disabilities.
+•	Curated novel 28K+ image dataset; achieved 85% accuracy and 40% reduced trainer dependency. Currently extending the architecture toward human facial signal interpretation for emotion-aware assistive devices, AAC communication aids and autism based behavioral data analytics.
+•	1st Place, NJBDA Symposium 2025, ranked top among 42+ universities for bridging animal behavior into clinically relevant assistive technology.
+ARISE: AI-Powered Accessible Virtual Laboratory via Gesture & Voice-Controlled Commands                                                                       Redmond, WA
+•	Designed an Azure Cognitive Services–powered AR laboratory (later Mediapipe integrated) enabling gesture-controlled chemistry experiments (50+ reactions) for learners with physical access needs, removing in person lab barriers through an accessible web user interface.
+•	Achieved 97% gesture recognition accuracy, 1.35s latency, 25% broader accessibility reach for K-12 students with neuromuscular impairment.
+•	Global Champion, Microsoft Imagine Cup Junior 2022, AI for Accessibility Category, featured in the official Microsoft LinkedIn post and Forbes.
+-------------------------
+TECHNICAL SKILLS
+Assistive Technology: PyTorch, TensorFlow, Scikit-learn, OpenCV, Mediapipe, YOLO, Grad-CAM, AAC system, HuggingFace, Parkinson’s diagnostic ML
+MLOps & Infrastructure: Docker, Kubernetes, Terraform, AWS (EC2), GitHub Actions CI/CD, Airflow, Weights & Biases, Grafana, Supabase, Firebase
+API & Workflow Automation: LangChain, FastAPI, Flask, Django, MCP/A2A workflow, n8n, Zapier, Python (NumPy, Pandas, Matplotlib), PostgreSQL
+Generative AI & Search Systems: RAG Pipelines, Semantic Search & Vector Embeddings, Vector Databases (Pinecone/Weaviate), LLMs Fine-tuning
+Accessible Products & Rapid Prototyping: Next.js, React, Vue, Vite, TypeScript, Flutter/Dart, Three.js, Unity, Blender, Manim, Agile (Scrum/Kanban)
+-------------------------
+LEADERSHIP & RECOGNITION
+Computational Research: Corresponding Author                                                                                                      London, England  |  May 2022 – July 2024
+•	Global Winner, Phoenix Space Launchpad Challenge (European Space Agency); collaborated with multidisciplinary teams (3–11 members) to win 4 global competitions against 126+ nations, earning $5K individual research prize; featured in a CERN article and NASA announcement.
+Tech Activism: ICT Club President & Advisory Board                                                                                               Butwal, Nepal  |  April 2020 – March 2022
+•	Honored as Nepal's 20 Under 20, Glocal Exceptional Teenagers Award: Led 175+ tech enthusiasts through 9 state-level hackathons & camps, trained 820+ learners in computational thinking, coordinating with mentors across 15 regions for STEM access to underserved communities.
+
