@@ -152,13 +152,17 @@ export function BrainModel({
                 <Html position={labelPos as [number, number, number]} center zIndexRange={[100, 0]}>
                     <div
                         style={{
-                            color: 'var(--foreground)',
-                            border: '1.5px solid var(--foreground)',
-                            padding: '4px 8px',
+                            color: '#444',
+                            border: '1px solid rgba(255,255,255,0.5)',
+                            borderRadius: '12px',
+                            padding: '5px 10px',
                             fontSize: '11px',
-                            fontFamily: 'monospace',
-                            fontWeight: 'bold',
-                            background: 'var(--background)',
+                            fontFamily: 'sans-serif',
+                            fontWeight: 'normal',
+                            background: 'rgba(255,255,255,0.4)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
                             cursor: 'pointer',
                             userSelect: 'none',
                             transform: isActive || isHovered ? 'scale(1.15)' : 'scale(1)',

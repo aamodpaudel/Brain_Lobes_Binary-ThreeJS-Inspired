@@ -52,6 +52,9 @@ export async function PUT(req: Request) {
                 bio: data.bio,
                 instructions: data.instructions,
                 instructionsBottom: data.instructionsBottom || "",
+                githubUrl: data.githubUrl || null,
+                linkedinUrl: data.linkedinUrl || null,
+                twitterUrl: data.twitterUrl || null,
             }
         });
 
