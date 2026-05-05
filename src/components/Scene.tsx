@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { OrbitControls } from '@react-three/drei';
 import { useSpring as useWebSpring, a as webA } from '@react-spring/web';
 import { Github, Linkedin, Twitter } from 'lucide-react';
+import katex from 'katex';
+import renderMathInElement from 'katex/dist/contrib/auto-render';
 import 'katex/dist/katex.min.css';
 
 export function Scene() {
@@ -40,6 +42,64 @@ export function Scene() {
         ? sections.filter(s => s.order === activeSection && !s.isGlobalProfile)
         : [];
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const elements = document.querySelectorAll('.quill-content');
+            elements.forEach(el => {
+                const container = el as HTMLElement;
+
+                // 1. Standard Auto-render (for explicit delimiters)
+                renderMathInElement(container, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false
+                });
+
+                // 2. Advanced Fallback: Scan text nodes for raw LaTeX patterns
+                // This covers cases where users type LaTeX directly without delimiters or class
+                const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+                let textNode: Node | null;
+                const targets: { node: Text; text: string }[] = [];
+                
+                while (textNode = walker.nextNode()) {
+                    const text = textNode.textContent || '';
+                    // Heuristic: backslash + common commands/symbols
+                    if (text.includes('\\') && (text.includes('_') || text.includes('^') || text.includes('\\frac') || text.includes('\\bar') || text.includes('\\sum'))) {
+                        targets.push({ node: textNode as Text, text });
+                    }
+                }
+
+                targets.forEach(({ node, text }) => {
+                    if (node.parentNode && !(node.parentNode as HTMLElement).closest('.katex')) {
+                        const span = document.createElement('span');
+                        node.parentNode.replaceChild(span, node);
+                        try {
+                            katex.render(text.trim(), span, { throwOnError: false, displayMode: text.length > 50 });
+                        } catch (e) {
+                            span.textContent = text;
+                        }
+                    }
+                });
+
+                // 3. Handle Quill Formula blots specifically (those use data-value)
+                const formulas = container.querySelectorAll('.ql-formula');
+                formulas.forEach(f => {
+                    const tex = (f as HTMLElement).getAttribute('data-value');
+                    if (tex && !f.querySelector('.katex')) {
+                        try {
+                            katex.render(tex, f as HTMLElement, { throwOnError: false });
+                        } catch (e) {}
+                    }
+                });
+            });
+        }, 300); // Increased timeout to ensure content is fully settled
+        return () => clearTimeout(timer);
+    }, [activeSection, sections, settings]);
+
     const contentOpacity = useWebSpring({ opacity: displayedSections.length > 0 ? 1 : 0, config: { duration: 300 } });
 
     const getRegionName = (id: number) => {
@@ -67,15 +127,6 @@ export function Scene() {
     if (isLoading || !settings) {
         return <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
     }
-
-    // The explicit button layout sequence: 1(Frontal), 2(Parietal), 4(Temporal), 5(Cerebellum), 3(Occipital)
-    const buttonNavSequence = [
-        { id: 1, label: '0001' },
-        { id: 2, label: '0010' },
-        { id: 4, label: '0100' },
-        { id: 5, label: '0101' },
-        { id: 3, label: '0011' }
-    ];
 
     // CSS injection for standard rich-text <p> elements without leaking global scope
     const richTextStyles = {

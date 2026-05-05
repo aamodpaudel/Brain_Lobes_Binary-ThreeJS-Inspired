@@ -94,7 +94,7 @@ a {
   max-width: 100%;
 }
 
-.quill-content * {
+.quill-content *:not(.katex, .katex *) {
   white-space: normal !important;
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
