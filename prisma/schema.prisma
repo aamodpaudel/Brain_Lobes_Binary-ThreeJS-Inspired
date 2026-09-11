@@ -7,33 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-}
+// domain is one of the DomainKey values in src/lib/domains.ts
+// (SQLite has no native enum support in Prisma, so it's a validated string)
 
-model ContentSection {
-  id              Int      @id @default(autoincrement())
-  side            String   // "LEFT" or "RIGHT" or "GLOBAL"
-  title           String
-  content         String
-  isGlobalProfile Boolean  @default(false)
-  order           Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Admin {
+  id           Int    @id @default(autoincrement())
+  email        String @unique
+  passwordHash String
 }
 
 model GlobalSettings {
-  id                 Int      @id @default(autoincrement())
-  title              String
-  subtitle           String
-  email              String
-  bio                String
-  instructions       String
-  instructionsBottom String @default("")
-  githubUrl          String?
-  linkedinUrl        String?
-  twitterUrl         String?
-  updatedAt          DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  title       String   @default("My Mind In A Box")
+  tagline     String   @default("")
+  bio         String   @default("")
+  email       String   @default("")
+  githubUrl   String?
+  linkedinUrl String?
+  twitterUrl  String?
+  vscoUrl     String?
+  updatedAt   DateTime @updatedAt
+}
+
+model DomainInfo {
+  id          Int    @id @default(autoincrement())
+  domain      String @unique
+  order       Int
+  label       String
+  tagline     String @default("")
+  description String @default("")
+  colorHex    String @default("#888888")
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  domain    String
+  title     String
+  slug      String
+  summary   String   @default("")
+  content   String   @default("")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  linksFrom NoteLink[] @relation("LinksFrom")
+  linksTo   NoteLink[] @relation("LinksTo")
+
+  @@unique([domain, slug])
+}
+
+model NoteLink {
+  id     Int  @id @default(autoincrement())
+  fromId Int
+  toId   Int
+  from   Note @relation("LinksFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to     Note @relation("LinksTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
 }
