@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyPassword } from '@/lib/auth';
 
 export async function POST(req: Request) {
     try {
@@ -9,8 +10,7 @@ export async function POST(req: Request) {
             where: { email },
         });
 
-        // In a real application, you would hash the password properly before inserting and compare using bcrypt here.
-        if (admin && admin.password === password) {
+        if (admin && (await verifyPassword(password, admin.passwordHash))) {
             const response = NextResponse.json({ success: true });
             response.cookies.set('adminSession', 'authenticated', {
                 httpOnly: true,
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

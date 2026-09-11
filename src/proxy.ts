@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Guards /admin page navigation. API routes check the session themselves
+// (see src/lib/auth.ts:isAdminSession) since redirecting a fetch() to an
+// HTML login page would break JSON responses.
 export function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
@@ -12,7 +15,6 @@ export function proxy(request: NextRequest) {
         }
     }
 
-    // Redirect /admin/login to /admin if already authed
     if (path === '/admin/login') {
         const sessionCookie = request.cookies.get('adminSession');
         if (sessionCookie && sessionCookie.value === 'authenticated') {
