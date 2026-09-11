@@ -1,11 +1,10 @@
-import { Scene } from "@/components/Scene";
+import { Suspense } from "react";
+import { MindScene } from "@/components/mind/MindScene";
 
 export default function Home() {
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ flex: 1, position: "relative" }}>
-        <Scene />
-      </div>
-    </main>
+    <Suspense fallback={null}>
+      <MindScene />
+    </Suspense>
   );
 }
