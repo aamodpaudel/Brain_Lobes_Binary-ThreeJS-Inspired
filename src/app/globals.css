@@ -1,16 +1,25 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --surface: #f7f7f8;
+  --surface-2: #eeeeef;
+  --foreground: #14151a;
+  --muted: #6b6f76;
+  --border: rgba(0, 0, 0, 0.1);
+  --accent: #6d8dfb;
 }
 
 :root[data-theme="dark"] {
-  --background: #000000;
-  --foreground: #ffffff;
-}
-
-:root[data-theme="light"] {
-  --background: #ffffff;
-  --foreground: #000000;
+  --background: #0b0c0f;
+  --surface: #16171c;
+  --surface-2: #1f2026;
+  --foreground: #f2f3f5;
+  --muted: #9a9ea6;
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #8ba5ff;
 }
 
 html,
@@ -23,70 +32,19 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'SF Compact Display', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 200;
-  /* Thin weight */
-  font-size: 75%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
   padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
   color: inherit;
-  text-decoration: none;
-}
-
-.scene-container {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3rem 1.5rem;
-}
-
-.scene-content {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 4rem;
-  max-width: 950px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.left-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.right-column {
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-@media (max-width: 768px) {
-  .scene-content {
-    flex-direction: column-reverse;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .right-column {
-    width: 100%;
-    max-width: 320px;
-  }
 }
 
 .quill-content {
@@ -112,7 +70,6 @@ a {
   margin-bottom: 0;
 }
 
-/* Rich Text Editor Overrides for bold/italic/links */
 .quill-content b,
 .quill-content strong,
 .ql-editor b,
@@ -129,7 +86,7 @@ a {
 
 .quill-content a,
 .ql-editor a {
-  color: #0066cc !important;
+  color: var(--accent) !important;
   text-decoration: underline !important;
   cursor: pointer !important;
   pointer-events: auto !important;
@@ -137,15 +94,9 @@ a {
   z-index: 10;
 }
 
-.quill-content a:hover,
-.ql-editor a:hover {
-  color: #004c99 !important;
-}
-
-/* Fix Quill dropdown menu bleeding/z-index issues */
 .ql-snow .ql-picker-options {
-  background-color: #fff !important;
+  background-color: var(--surface) !important;
   z-index: 9999 !important;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
