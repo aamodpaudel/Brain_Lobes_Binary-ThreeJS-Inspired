@@ -10,6 +10,10 @@
   --muted: #6b6f76;
   --border: rgba(0, 0, 0, 0.1);
   --accent: #6d8dfb;
+  --glass-bg: rgba(255, 255, 255, 0.35);
+  --glass-topbar-bg: rgba(255, 255, 255, 0.25);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --traffic-dot: #bdbdbd;
 }
 
 :root[data-theme="dark"] {
@@ -20,6 +24,10 @@
   --muted: #9a9ea6;
   --border: rgba(255, 255, 255, 0.12);
   --accent: #8ba5ff;
+  --glass-bg: rgba(30, 31, 36, 0.5);
+  --glass-topbar-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --traffic-dot: #4b4c52;
 }
 
 html,
