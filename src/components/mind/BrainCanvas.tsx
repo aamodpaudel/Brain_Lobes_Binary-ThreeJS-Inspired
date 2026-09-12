@@ -20,6 +20,18 @@ interface BrainCanvasProps {
 }
 
 const CAMERA_DISTANCE = 4.5;
+const CUBE_SIZE = 2.6;
+
+/** The static display-case frame the brain rotates inside — camera and cube never move,
+ * only the brain does, so the "box" always stays centered regardless of what's selected. */
+function WireframeCube() {
+    const geometry = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)), []);
+    return (
+        <lineSegments geometry={geometry}>
+            <lineBasicMaterial color="#8a8a8a" transparent opacity={0.4} />
+        </lineSegments>
+    );
+}
 
 export function BrainCanvas({ activeOrder, onLobeClick, onSocketProjected, containerRef }: BrainCanvasProps) {
     const controlsRef = useRef<CameraControls | null>(null);
@@ -55,36 +67,18 @@ export function BrainCanvas({ activeOrder, onLobeClick, onSocketProjected, conta
         [socketRefs, containerRef, onSocketProjected],
     );
 
-    // Reacts to externally-driven selection changes (a lobe click, or the domain box's
-    // close button) so the camera transition runs no matter what triggered it.
+    // Camera and cube never move — only the brain rotates (see BrainModel's useFrame) — so once
+    // a lobe is selected we just wait for that settle-to-neutral animation to finish, then read
+    // wherever the lobe ended up for the circuit trace's starting point.
     useEffect(() => {
-        const controls = controlsRef.current;
-        if (!controls) return;
+        if (activeOrder == null) return;
 
-        if (activeOrder == null) {
-            controls.reset(true);
-            return;
-        }
-
-        // BrainModel keeps rotating the brain toward its neutral pose for ~0.5s after
-        // selection (see the damp in its useFrame) — read the socket's position only once
-        // that settles, otherwise the camera locks onto a point that moves out from under it.
         const settleTimer = setTimeout(() => {
-            const obj = socketRefs[activeOrder]?.current;
-            if (!obj) return;
-
-            const target = new THREE.Vector3();
-            obj.getWorldPosition(target);
-            // Pan the existing front-on framing to center on the lobe, rather than
-            // recomputing an absolute position — that would view the brain from whatever
-            // odd angle the lobe's raw local coordinates happen to point in.
-            controls.moveTo(target.x, target.y, target.z, true).then(() => {
-                requestAnimationFrame(() => projectSocket(activeOrder));
-            });
+            requestAnimationFrame(() => projectSocket(activeOrder));
         }, 550);
 
         return () => clearTimeout(settleTimer);
-    }, [activeOrder, socketRefs, projectSocket]);
+    }, [activeOrder, projectSocket]);
 
     return (
         <Canvas
@@ -96,6 +90,7 @@ export function BrainCanvas({ activeOrder, onLobeClick, onSocketProjected, conta
         >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
+            <WireframeCube />
             <BrainModel activeSection={activeOrder} onSectionClick={onLobeClick} socketRefs={socketRefs} />
             <CameraControls
                 ref={controlsRef}

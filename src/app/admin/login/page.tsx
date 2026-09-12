@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CircuitBackground } from '@/components/CircuitBackground';
 import { inputClass, labelClass, primaryButtonClass } from '@/components/admin/adminFormStyles';
 
 export default function AdminLogin() {
@@ -35,14 +34,10 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--background)' }}>
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <CircuitBackground />
-            </div>
-
+        <div className="flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--background)' }}>
             <form
                 onSubmit={handleLogin}
-                className="relative z-10 flex w-full max-w-sm flex-col gap-4 rounded-xl border p-6 shadow-lg"
+                className="flex w-full max-w-sm flex-col gap-4 rounded-xl border p-6 shadow-lg"
                 style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
             >
                 <h1 className="text-center text-2xl font-light">Admin Login</h1>
