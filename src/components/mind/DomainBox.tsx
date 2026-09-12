@@ -16,9 +16,10 @@ interface DomainBoxProps {
     info: DomainInfoData;
     onExplore: () => void;
     onClose: () => void;
+    exploring: boolean;
 }
 
-export function DomainBox({ info, onExplore, onClose }: DomainBoxProps) {
+export function DomainBox({ info, onExplore, onClose, exploring }: DomainBoxProps) {
     return (
         <div
             className="w-full max-w-sm rounded-xl border p-5 shadow-lg backdrop-blur-xl"
@@ -59,7 +60,7 @@ export function DomainBox({ info, onExplore, onClose }: DomainBoxProps) {
                 className="mt-4 w-full rounded-lg py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: info.colorHex }}
             >
-                Explore Notes
+                {exploring ? 'Hide Notes' : 'Explore Notes'}
             </button>
         </div>
     );
