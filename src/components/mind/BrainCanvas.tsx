@@ -1,102 +1,74 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { CameraControls } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import * as THREE from 'three';
-import { BrainModel, type SocketRefs } from '../BrainModel';
-
-export interface ProjectedPoint {
-    x: number;
-    y: number;
-}
+import { MorphField, type DomainGraphData } from './MorphField';
 
 interface BrainCanvasProps {
     activeOrder: number | null;
     onLobeClick: (order: number | null) => void;
-    onSocketProjected: (order: number, point: ProjectedPoint) => void;
-    containerRef: React.RefObject<HTMLDivElement | null>;
+    graphs: Partial<Record<number, DomainGraphData>>;
 }
 
-const CAMERA_DISTANCE = 4.5;
-const CUBE_SIZE = 2.6;
+// Distance is set well past the cube's own half-size so its nearest corners (closest to the
+// camera, hence the largest on screen) stay inside the frustum with margin — at a smaller
+// distance the cube's own edges get clipped by the canvas, which is what "bigger" actually needs.
+const CAMERA_DISTANCE = 5.6;
+const CUBE_SIZE = 3.2;
+const CUBE_HALF = CUBE_SIZE / 2;
 
-/** The static display-case frame the brain rotates inside — camera and cube never move,
- * only the brain does, so the "box" always stays centered regardless of what's selected. */
+const CUBE_CORNERS: [number, number, number][] = (() => {
+    const corners: [number, number, number][] = [];
+    for (const x of [-CUBE_HALF, CUBE_HALF]) for (const y of [-CUBE_HALF, CUBE_HALF]) for (const z of [-CUBE_HALF, CUBE_HALF]) corners.push([x, y, z]);
+    return corners;
+})();
+
+/** The display-case frame. It stays completely still — the transition between what it's
+ * showing is carried entirely by MorphField's particle dissolve, not by moving the case. */
 function WireframeCube() {
     const geometry = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)), []);
+    const cornerGeometry = useMemo(() => new THREE.SphereGeometry(0.05, 12, 12), []);
     return (
-        <lineSegments geometry={geometry}>
-            <lineBasicMaterial color="#8a8a8a" transparent opacity={0.4} />
-        </lineSegments>
+        <group>
+            <lineSegments geometry={geometry}>
+                <lineBasicMaterial color="#8a8a8a" transparent opacity={0.35} />
+            </lineSegments>
+            {CUBE_CORNERS.map((pos, i) => (
+                <mesh key={i} position={pos} geometry={cornerGeometry}>
+                    <meshBasicMaterial color="#9a9a9a" transparent opacity={0.75} />
+                </mesh>
+            ))}
+        </group>
     );
 }
 
-export function BrainCanvas({ activeOrder, onLobeClick, onSocketProjected, containerRef }: BrainCanvasProps) {
-    const controlsRef = useRef<CameraControls | null>(null);
-    const cameraRef = useRef<THREE.Camera | null>(null);
-
-    const socketRefs = useMemo<SocketRefs>(
-        () => ({
-            1: { current: null },
-            2: { current: null },
-            3: { current: null },
-            4: { current: null },
-            5: { current: null },
-        }),
-        [],
-    );
-
-    const projectSocket = useCallback(
-        (order: number) => {
-            const obj = socketRefs[order]?.current;
-            const container = containerRef.current;
-            const camera = cameraRef.current;
-            if (!obj || !container || !camera) return;
-
-            const worldPos = new THREE.Vector3();
-            obj.getWorldPosition(worldPos);
-            const ndc = worldPos.clone().project(camera);
-            const rect = container.getBoundingClientRect();
-            onSocketProjected(order, {
-                x: (ndc.x * 0.5 + 0.5) * rect.width,
-                y: (-ndc.y * 0.5 + 0.5) * rect.height,
-            });
-        },
-        [socketRefs, containerRef, onSocketProjected],
-    );
-
-    // Camera and cube never move — only the brain rotates (see BrainModel's useFrame) — so once
-    // a lobe is selected we just wait for that settle-to-neutral animation to finish, then read
-    // wherever the lobe ended up for the circuit trace's starting point.
-    useEffect(() => {
-        if (activeOrder == null) return;
-
-        const settleTimer = setTimeout(() => {
-            requestAnimationFrame(() => projectSocket(activeOrder));
-        }, 550);
-
-        return () => clearTimeout(settleTimer);
-    }, [activeOrder, projectSocket]);
+export function BrainCanvas({ activeOrder, onLobeClick, graphs }: BrainCanvasProps) {
+    const controlsRef = useRef<CameraControlsImpl | null>(null);
 
     return (
         <Canvas
             camera={{ position: [0, 0, CAMERA_DISTANCE], fov: 50 }}
-            onCreated={({ camera }) => {
-                cameraRef.current = camera;
-            }}
             onPointerMissed={() => onLobeClick(null)}
         >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
             <WireframeCube />
-            <BrainModel activeSection={activeOrder} onSectionClick={onLobeClick} socketRefs={socketRefs} />
+            <MorphField activeOrder={activeOrder} onLobeClick={onLobeClick} graphs={graphs} />
             <CameraControls
                 ref={controlsRef}
-                enabled={activeOrder == null}
+                // Draggable in every state, not just while the brain is showing — the case
+                // itself never moves on its own, so free-rotating it to inspect a note graph
+                // from another angle is always available.
+                enabled
                 minDistance={CAMERA_DISTANCE}
                 maxDistance={CAMERA_DISTANCE}
+                minPolarAngle={Math.PI / 2 - 0.45}
+                maxPolarAngle={Math.PI / 2 + 0.45}
+                minAzimuthAngle={-0.75}
+                maxAzimuthAngle={0.75}
                 mouseButtons={{
                     left: CameraControlsImpl.ACTION.ROTATE,
                     right: CameraControlsImpl.ACTION.NONE,
