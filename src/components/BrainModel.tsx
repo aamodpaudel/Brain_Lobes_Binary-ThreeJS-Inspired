@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useState, useMemo } from 'react';
 import { useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -64,11 +63,12 @@ function LobeMesh({ name, meshKey, geometry, baseMaterial, isHovered, onHover, o
 }
 
 /** The brain — shown only while the display case is in its idle (no domain selected) state.
- * Gently oscillates in place; selecting a lobe swaps this out for a domain icon one level up
- * (see BrainCanvas), so this component no longer needs an "active" pose of its own. */
+ * Selecting a lobe swaps this out for a domain's notes one level up (see MorphField). The case
+ * itself (in BrainCanvas) now carries the slow idle sway, so both the brain and the notes
+ * particles get it for free just by sitting inside that rotating group — this component doesn't
+ * need its own rotation any more. */
 export function BrainModel({ onSectionClick }: { onSectionClick: (id: number) => void }) {
     const { nodes, materials } = useGLTF('/brain2.glb') as unknown as { nodes: GLTFNodes; materials: GLTFMaterials };
-    const groupRef = useRef<THREE.Group>(null);
     const [hoveredMesh, setHoveredMesh] = useState<MeshKey | null>(null);
 
     // Pre-clone materials so we aren't cloning on every render frame
@@ -84,20 +84,13 @@ export function BrainModel({ onSectionClick }: { onSectionClick: (id: number) =>
         };
     }, [materials]);
 
-    useFrame((state) => {
-        const time = state.clock.elapsedTime;
-        if (!groupRef.current) return;
-
-        // Constrain rotation to oscillate between -30 and 15 degrees
-        const minAngle = -30 * (Math.PI / 180);
-        const maxAngle = 15 * (Math.PI / 180);
-        const midPoint = (maxAngle + minAngle) / 2;
-        const amplitude = (maxAngle - minAngle) / 2;
-
-        groupRef.current.rotation.y = midPoint + Math.sin(time * 0.2) * amplitude;
-        groupRef.current.rotation.x = 0;
-        groupRef.current.rotation.z = 0;
-    });
+    // A lobe click swaps this whole component out (for the notes particles) without necessarily
+    // firing onPointerOut first — reset the cursor directly rather than leaving it stuck as 'pointer'.
+    useEffect(() => {
+        return () => {
+            document.body.style.cursor = 'auto';
+        };
+    }, []);
 
     const lobes: { name: string; key: MeshKey }[] = [
         { name: 'brain_Frontal_0', key: 'Frontal' },
@@ -108,7 +101,7 @@ export function BrainModel({ onSectionClick }: { onSectionClick: (id: number) =>
     ];
 
     return (
-        <group ref={groupRef} scale={1.56}>
+        <group scale={1.56}>
             <Center>
                 <group rotation={[0, -Math.PI / 2, 0]}>
                     <group position={[0.391, 0, 0.778]} scale={[0.1, 0.1, 0.1]}>

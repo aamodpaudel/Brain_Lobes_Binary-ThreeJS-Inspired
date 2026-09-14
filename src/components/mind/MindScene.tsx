@@ -1,14 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Github, Linkedin, Twitter } from 'lucide-react';
 import { RichContent } from '../RichContent';
 import { BrainCanvas } from './BrainCanvas';
 import type { DomainGraphData } from './MorphField';
-import { WindowChrome } from './WindowChrome';
+import { WindowChrome, type AddressBarPage } from './WindowChrome';
 import { useTheme } from '@/lib/useTheme';
-import { DOMAINS, DOMAIN_LIST, domainByOrder, domainBySlug, type DomainKey } from '@/lib/domains';
+import { DOMAIN_LIST, domainByOrder, domainBySlug, type DomainKey } from '@/lib/domains';
 
 export interface DomainInfoData {
     domain: DomainKey;
@@ -23,6 +23,7 @@ interface GlobalSettingsData {
     title: string;
     tagline: string;
     bio: string;
+    instructionText: string;
     email: string;
     githubUrl: string | null;
     linkedinUrl: string | null;
@@ -54,6 +55,7 @@ export function MindScene() {
     const [graphs, setGraphs] = useState<Partial<Record<number, DomainGraphData>>>({});
     const [activeOrder, setActiveOrder] = useState<number | null>(null);
 
+    const router = useRouter();
     const searchParams = useSearchParams();
     const pendingDomainSlugRef = useRef<string | null>(searchParams.get('domain'));
 
@@ -97,6 +99,12 @@ export function MindScene() {
         setActiveOrder((prev) => (prev === order ? null : order));
     }, [resetToIdle]);
 
+    // Unlike handleLobeClick, never toggles off — clicking a lobe you've already selected is a
+    // natural "deselect" gesture, but picking your *current* page from the address bar's
+    // dropdown (or pressing Enter without typing anything) should just keep you there, the way
+    // re-entering a browser's current URL doesn't navigate you away from it.
+    const goToDomain = useCallback((order: number) => setActiveOrder(order), []);
+
     const goPrev = useCallback(() => {
         handleLobeClick(activeOrder === null ? null : activeOrder === 1 ? null : activeOrder - 1);
     }, [activeOrder, handleLobeClick]);
@@ -117,8 +125,36 @@ export function MindScene() {
 
     const activeDomainMeta = activeOrder ? domainByOrder(activeOrder) : undefined;
     const activeDomainInfo = activeDomainMeta ? domains.find((d) => d.domain === activeDomainMeta.key) : undefined;
-    const activeBinary = activeDomainMeta ? DOMAINS[activeDomainMeta.key]?.binary : undefined;
     const noteCount = activeOrder ? graphs[activeOrder]?.nodes.length ?? 0 : 0;
+
+    // Keep the browser's real address bar (not the in-app fake one) matching wherever you
+    // actually are — previously nothing ever updated it after the initial load, so following a
+    // note's "Back to <domain>" link (?domain=slug) left it stuck on that domain forever, even
+    // after switching to a completely different one via the arrows or a lobe. Skipped while a
+    // pending deep link hasn't been consumed yet, so this doesn't wipe out ?domain=... out from
+    // under the effect above before it's had a chance to read it.
+    const targetUrl = activeDomainMeta ? `/?domain=${activeDomainMeta.slug}` : '/';
+    useEffect(() => {
+        if (pendingDomainSlugRef.current) return;
+        router.replace(targetUrl, { scroll: false });
+    }, [targetUrl, router]);
+
+    // The address bar's dropdown — every page this site actually has, not a raw URL field,
+    // since typing an arbitrary path would have nowhere to go.
+    const pageOptions: AddressBarPage[] = useMemo(
+        () => [
+            { path: 'aamodpaudel.com', label: settings?.title || 'Home', onSelect: resetToIdle },
+            ...DOMAIN_LIST.map((meta) => ({
+                path: `aamodpaudel.com/${meta.slug}`,
+                label: domains.find((d) => d.domain === meta.key)?.label ?? meta.slug,
+                onSelect: () => goToDomain(meta.order),
+            })),
+            // A real route (not part of the brain/domain state machine), so selecting it is an
+            // actual navigation rather than an internal state change.
+            { path: 'aamodpaudel.com/gallery', label: 'Gallery', onSelect: () => router.push('/gallery') },
+        ],
+        [settings, domains, resetToIdle, goToDomain, router],
+    );
 
     if (!settings) {
         return (
@@ -132,6 +168,7 @@ export function MindScene() {
         <div className="min-h-screen w-full py-6 sm:py-10" style={{ background: 'var(--background)' }}>
             <WindowChrome
                 addressPath={activeDomainMeta ? `aamodpaudel.com/${activeDomainMeta.slug}` : 'aamodpaudel.com'}
+                pages={pageOptions}
                 canGoPrev={activeOrder !== null}
                 canGoNext={activeOrder !== 5}
                 onPrev={goPrev}
@@ -179,16 +216,14 @@ export function MindScene() {
                         </div>
                     )}
 
-                    {!activeOrder && (
-                        <p className="text-xs italic opacity-60">
-                            Click a region of the brain to wander into one of the five things I think about most.
-                        </p>
+                    {!activeOrder && settings.instructionText && (
+                        <p className="text-xs italic opacity-60">{settings.instructionText}</p>
                     )}
 
                     <div className="mt-6 flex w-full flex-col items-center gap-8">
                         <div className="flex w-full items-center justify-center gap-3 sm:gap-6">
                             <NavArrow direction="prev" disabled={activeOrder === null} onClick={goPrev} />
-                            <div className="relative aspect-square w-full max-w-[360px] min-w-0">
+                            <div className="relative aspect-square w-full max-w-[440px] min-w-0">
                                 <BrainCanvas activeOrder={activeOrder} onLobeClick={handleLobeClick} graphs={graphs} />
                             </div>
                             <NavArrow direction="next" disabled={activeOrder === 5} onClick={goNext} />
@@ -196,17 +231,7 @@ export function MindScene() {
 
                         {activeDomainInfo && (
                             <div className="flex max-w-xl flex-col items-center gap-2">
-                                <div className="flex items-center gap-2">
-                                    {activeBinary && (
-                                        <span
-                                            className="rounded-full border px-1.5 py-0.5 font-mono text-[10px] tracking-wide opacity-60"
-                                            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
-                                        >
-                                            {activeBinary}
-                                        </span>
-                                    )}
-                                    <h2 className="text-xl font-semibold">{activeDomainInfo.label}</h2>
-                                </div>
+                                <h2 className="text-xl font-semibold">{activeDomainInfo.label}</h2>
                                 <p className="text-sm" style={{ color: 'var(--muted)' }}>
                                     {activeDomainInfo.tagline}
                                 </p>
