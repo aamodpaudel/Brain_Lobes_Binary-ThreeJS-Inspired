@@ -43,3 +43,6 @@ next-env.d.ts
 /src/generated/prisma
 *.db
 *.db-journal
+
+# user-uploaded note attachments and gallery photos (runtime data, not source)
+/public/uploads/

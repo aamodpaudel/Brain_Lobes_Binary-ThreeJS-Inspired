@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdminSession } from '@/lib/auth';
 import { slugify } from '@/lib/slug';
+import { deleteUploadFile } from '@/lib/uploads';
 
 async function getRelatedIds(noteId: number): Promise<number[]> {
     const links = await prisma.noteLink.findMany({
@@ -44,7 +45,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         }
 
         const id = Number((await params).id);
-        const note = await prisma.note.findUnique({ where: { id } });
+        const note = await prisma.note.findUnique({
+            where: { id },
+            include: { attachments: { orderBy: { createdAt: 'asc' } } },
+        });
         if (!note) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
         const relatedIds = await getRelatedIds(id);
@@ -109,7 +113,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
         }
 
         const id = Number((await params).id);
+        // The NoteAttachment rows cascade-delete with the note, but that only removes the DB
+        // records — the actual files on disk need cleaning up separately first.
+        const attachments = await prisma.noteAttachment.findMany({ where: { noteId: id } });
         await prisma.note.delete({ where: { id } });
+        await Promise.all(attachments.map((a) => deleteUploadFile(a.path)));
         return NextResponse.json({ success: true });
     } catch {
         return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });

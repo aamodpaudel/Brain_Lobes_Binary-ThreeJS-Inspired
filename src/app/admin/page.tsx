@@ -5,6 +5,7 @@ const LINKS = [
     { href: '/admin/settings', title: 'Global Settings', description: 'Title, tagline, bio, socials, and the VSCO link.' },
     { href: '/admin/domains', title: 'Domains', description: 'Edit the label, tagline, description, and color for each of the 5 mind boxes.' },
     { href: '/admin/notes', title: 'Notes', description: 'Create, edit, and link the notes that make up each domain\'s graph.' },
+    { href: '/admin/gallery', title: 'Gallery', description: 'Upload and order the photos shown on the self-hosted /gallery page.' },
 ];
 
 export default function AdminDashboard() {

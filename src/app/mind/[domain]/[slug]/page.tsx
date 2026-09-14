@@ -23,8 +23,12 @@ export default async function NotePage({ params }: PageProps) {
 
     const note = await prisma.note.findUnique({
         where: { domain_slug: { domain: domainMeta.key, slug } },
+        include: { attachments: { orderBy: { createdAt: 'asc' } } },
     });
     if (!note || !note.published) notFound();
+
+    const isImage = (mimeType: string) => mimeType.startsWith('image/');
+    const formatSize = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`);
 
     const related = await getRelatedNotes(note.id);
 
@@ -50,6 +54,34 @@ export default async function NotePage({ params }: PageProps) {
                 <div className="text-base leading-relaxed">
                     <RichContent html={note.content} />
                 </div>
+
+                {note.attachments.length > 0 && (
+                    <div className="border-t pt-5" style={{ borderColor: 'var(--border)' }}>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide opacity-60">Attachments</h2>
+                        <div className="flex flex-col gap-3">
+                            {note.attachments.map((a) =>
+                                isImage(a.mimeType) ? (
+                                    <a key={a.id} href={a.path} target="_blank" rel="noopener noreferrer" className="block">
+                                        {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded, unknown dimensions */}
+                                        <img src={a.path} alt={a.filename} className="max-h-96 w-auto rounded-lg border" style={{ borderColor: 'var(--border)' }} />
+                                    </a>
+                                ) : (
+                                    <a
+                                        key={a.id}
+                                        href={a.path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm underline hover:opacity-80"
+                                        style={{ borderColor: 'var(--border)' }}
+                                    >
+                                        <span>{a.filename}</span>
+                                        <span className="shrink-0 text-xs opacity-60 no-underline">{formatSize(a.size)}</span>
+                                    </a>
+                                ),
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {related.length > 0 && (
                     <div className="mt-6 border-t pt-5" style={{ borderColor: 'var(--border)' }}>
