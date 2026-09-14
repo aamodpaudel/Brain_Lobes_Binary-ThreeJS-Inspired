@@ -177,7 +177,7 @@ export function MindScene() {
                 onToggleTheme={toggleTheme}
                 vscoUrl={settings.vscoUrl}
             >
-                <div className="flex flex-col items-center gap-8 text-center">
+                <div className="flex flex-col items-center gap-12 text-center">
                     <div>
                         <h1 className="text-4xl font-light sm:text-5xl">{settings.title}</h1>
                         {settings.tagline && (
@@ -220,7 +220,7 @@ export function MindScene() {
                         <p className="text-xs italic opacity-60">{settings.instructionText}</p>
                     )}
 
-                    <div className="mt-6 flex w-full flex-col items-center gap-8">
+                    <div className="mt-2 flex w-full flex-col items-center gap-8">
                         <div className="flex w-full items-center justify-center gap-3 sm:gap-6">
                             <NavArrow direction="prev" disabled={activeOrder === null} onClick={goPrev} />
                             <div className="relative aspect-square w-full max-w-[440px] min-w-0">
