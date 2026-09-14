@@ -17,16 +17,17 @@ model Admin {
 }
 
 model GlobalSettings {
-  id          Int      @id @default(autoincrement())
-  title       String   @default("My Mind In A Box")
-  tagline     String   @default("")
-  bio         String   @default("")
-  email       String   @default("")
-  githubUrl   String?
-  linkedinUrl String?
-  twitterUrl  String?
-  vscoUrl     String?
-  updatedAt   DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  title           String   @default("My Mind In A Box")
+  tagline         String   @default("")
+  bio             String   @default("")
+  instructionText String   @default("Click a region of the brain to wander into one of the five things I think about most.")
+  email           String   @default("")
+  githubUrl       String?
+  linkedinUrl     String?
+  twitterUrl      String?
+  vscoUrl         String?
+  updatedAt       DateTime @updatedAt
 }
 
 model DomainInfo {
@@ -40,17 +41,18 @@ model DomainInfo {
 }
 
 model Note {
-  id        Int      @id @default(autoincrement())
-  domain    String
-  title     String
-  slug      String
-  summary   String   @default("")
-  content   String   @default("")
-  published Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  linksFrom NoteLink[] @relation("LinksFrom")
-  linksTo   NoteLink[] @relation("LinksTo")
+  id          Int      @id @default(autoincrement())
+  domain      String
+  title       String
+  slug        String
+  summary     String   @default("")
+  content     String   @default("")
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  linksFrom   NoteLink[]       @relation("LinksFrom")
+  linksTo     NoteLink[]       @relation("LinksTo")
+  attachments NoteAttachment[]
 
   @@unique([domain, slug])
 }
@@ -63,4 +65,27 @@ model NoteLink {
   to     Note @relation("LinksTo", fields: [toId], references: [id], onDelete: Cascade)
 
   @@unique([fromId, toId])
+}
+
+// A file attached to a note — stored on disk under public/uploads/notes (self-hosted, no
+// external service), with the DB row just tracking metadata and the path to serve it from.
+model NoteAttachment {
+  id        Int      @id @default(autoincrement())
+  noteId    Int
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  filename  String
+  path      String
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+}
+
+// The self-hosted photo gallery — the VSCO link (GlobalSettings.vscoUrl) still works
+// separately as an optional external link; this is the actual on-site gallery.
+model GalleryPhoto {
+  id        Int      @id @default(autoincrement())
+  path      String
+  caption   String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
