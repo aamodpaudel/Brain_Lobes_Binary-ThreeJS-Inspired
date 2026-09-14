@@ -1,18 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import { Github, Linkedin, Twitter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Github, Linkedin, Twitter } from 'lucide-react';
 import { RichContent } from '../RichContent';
-import { BrainCanvas, type ProjectedPoint } from './BrainCanvas';
-import { CircuitTrace } from './CircuitTrace';
-import { DomainBox, type DomainInfoData } from './DomainBox';
+import { BrainCanvas } from './BrainCanvas';
+import type { DomainGraphData } from './MorphField';
 import { WindowChrome } from './WindowChrome';
 import { useTheme } from '@/lib/useTheme';
-import { domainByOrder, domainBySlug } from '@/lib/domains';
+import { DOMAINS, DOMAIN_LIST, domainByOrder, domainBySlug, type DomainKey } from '@/lib/domains';
 
-const NotesGraph = dynamic(() => import('./NotesGraph').then((m) => m.NotesGraph), { ssr: false });
+export interface DomainInfoData {
+    domain: DomainKey;
+    label: string;
+    tagline: string;
+    description: string;
+    colorHex: string;
+}
 
 interface GlobalSettingsData {
     id: number;
@@ -26,111 +30,95 @@ interface GlobalSettingsData {
     vscoUrl: string | null;
 }
 
-const CIRCUIT_REVEAL_DELAY = 550; // matches CircuitTrace's draw-in duration
+/** Round, minimal nav button flanking the case — same prev/next logic as the toolbar's
+ * chevrons, just bigger and next to the thing it actually navigates. */
+function NavArrow({ direction, disabled, onClick }: { direction: 'prev' | 'next'; disabled: boolean; onClick: () => void }) {
+    const Icon = direction === 'prev' ? ChevronLeft : ChevronRight;
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={direction === 'prev' ? 'Previous domain' : 'Next domain'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-opacity hover:opacity-100 disabled:opacity-20"
+            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+        >
+            <Icon size={18} />
+        </button>
+    );
+}
 
 export function MindScene() {
     const { theme, toggleTheme } = useTheme();
     const [settings, setSettings] = useState<GlobalSettingsData | null>(null);
     const [domains, setDomains] = useState<DomainInfoData[]>([]);
+    const [graphs, setGraphs] = useState<Partial<Record<number, DomainGraphData>>>({});
     const [activeOrder, setActiveOrder] = useState<number | null>(null);
-    const [circuit, setCircuit] = useState<{ from: ProjectedPoint; to: ProjectedPoint } | null>(null);
-    const [showBox, setShowBox] = useState(false);
-    const [graphOpen, setGraphOpen] = useState(false);
-    const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
 
-    const stageRef = useRef<HTMLDivElement>(null);
-    const canvasContainerRef = useRef<HTMLDivElement>(null);
-    const domainBoxWrapperRef = useRef<HTMLDivElement>(null);
     const searchParams = useSearchParams();
-    const autoOpenGraphRef = useRef(false);
     const pendingDomainSlugRef = useRef<string | null>(searchParams.get('domain'));
 
     useEffect(() => {
         Promise.all([
             fetch('/api/settings').then((r) => r.json()),
             fetch('/api/domains').then((r) => r.json()),
-        ]).then(([s, d]) => {
+            // Every domain's notes graph, fetched up front (small payloads) so the particle
+            // morph never has to wait mid-transition for the real node/edge data it draws.
+            Promise.all(
+                DOMAIN_LIST.map((d) =>
+                    fetch(`/api/notes/graph?domain=${d.key}`)
+                        .then((r) => r.json())
+                        .catch(() => ({ nodes: [], edges: [] })),
+                ),
+            ),
+        ]).then(([s, d, noteGraphs]: [GlobalSettingsData, DomainInfoData[], { nodes: DomainGraphData['nodes']; edges: DomainGraphData['edges'] }[]]) => {
             setSettings(s);
             setDomains(d);
-        });
-    }, []);
-
-    useEffect(() => {
-        // stageRef isn't attached yet on the very first render (settings is still loading, so
-        // this component returns the "Loading…" placeholder instead of the real stage div) —
-        // re-run once settings arrives and the ref actually points at a mounted element.
-        const el = stageRef.current;
-        if (!el) return;
-        const observer = new ResizeObserver(([entry]) => {
-            setStageSize({ width: entry.contentRect.width, height: entry.contentRect.height });
-        });
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [settings]);
-
-    const resetToIdle = useCallback(() => {
-        setActiveOrder(null);
-        setCircuit(null);
-        setShowBox(false);
-        setGraphOpen(false);
-    }, []);
-
-    const handleLobeClick = useCallback(
-        (order: number | null) => {
-            if (order == null) {
-                resetToIdle();
-                return;
-            }
-            setActiveOrder((prev) => {
-                if (prev === order) {
-                    resetToIdle();
-                    return null;
-                }
-                setCircuit(null);
-                setShowBox(false);
-                setGraphOpen(false);
-                return order;
+            const byOrder: Partial<Record<number, DomainGraphData>> = {};
+            DOMAIN_LIST.forEach((meta, i) => {
+                const info = d.find((x) => x.domain === meta.key);
+                byOrder[meta.order] = {
+                    nodes: noteGraphs[i]?.nodes ?? [],
+                    edges: noteGraphs[i]?.edges ?? [],
+                    domainSlug: meta.slug,
+                    colorHex: info?.colorHex ?? '#9a9a9a',
+                };
             });
-        },
-        [resetToIdle],
-    );
-
-    const handleSocketProjected = useCallback((order: number, point: ProjectedPoint) => {
-        const canvasEl = canvasContainerRef.current;
-        const boxEl = domainBoxWrapperRef.current;
-        if (!canvasEl || !boxEl) return;
-
-        const from = { x: point.x + canvasEl.offsetLeft, y: point.y + canvasEl.offsetTop };
-        // Measured from the domain box's own (invisible-until-shown) wrapper, not a guessed
-        // placeholder — flex `gap` sits between elements, so a separate zero-size anchor div
-        // ends up offset from the box's real edge by a whole gap-width.
-        const to = { x: boxEl.offsetLeft, y: boxEl.offsetTop + boxEl.offsetHeight / 2 };
-
-        setCircuit({ from, to });
-        setTimeout(() => {
-            setShowBox(true);
-            if (autoOpenGraphRef.current) {
-                autoOpenGraphRef.current = false;
-                setGraphOpen(true);
-            }
-        }, CIRCUIT_REVEAL_DELAY);
+            setGraphs(byOrder);
+        });
     }, []);
+
+    const resetToIdle = useCallback(() => setActiveOrder(null), []);
+
+    const handleLobeClick = useCallback((order: number | null) => {
+        if (order == null) {
+            resetToIdle();
+            return;
+        }
+        setActiveOrder((prev) => (prev === order ? null : order));
+    }, [resetToIdle]);
+
+    const goPrev = useCallback(() => {
+        handleLobeClick(activeOrder === null ? null : activeOrder === 1 ? null : activeOrder - 1);
+    }, [activeOrder, handleLobeClick]);
+
+    const goNext = useCallback(() => {
+        handleLobeClick(activeOrder === null ? 1 : activeOrder + 1);
+    }, [activeOrder, handleLobeClick]);
 
     // Deep-link support: a note page's "Back to <domain>" link passes ?domain=<slug>
-    // so returning here reopens that domain's graph instead of landing on the idle brain.
+    // so returning here reopens that domain instead of landing on the idle brain.
     useEffect(() => {
         const slug = pendingDomainSlugRef.current;
         if (!slug || domains.length === 0) return;
         const meta = domainBySlug(slug);
         pendingDomainSlugRef.current = null;
-        if (meta) {
-            autoOpenGraphRef.current = true;
-            handleLobeClick(meta.order);
-        }
+        if (meta) handleLobeClick(meta.order);
     }, [domains, handleLobeClick]);
 
     const activeDomainMeta = activeOrder ? domainByOrder(activeOrder) : undefined;
     const activeDomainInfo = activeDomainMeta ? domains.find((d) => d.domain === activeDomainMeta.key) : undefined;
+    const activeBinary = activeDomainMeta ? DOMAINS[activeDomainMeta.key]?.binary : undefined;
+    const noteCount = activeOrder ? graphs[activeOrder]?.nodes.length ?? 0 : 0;
 
     if (!settings) {
         return (
@@ -146,8 +134,8 @@ export function MindScene() {
                 addressPath={activeDomainMeta ? `aamodpaudel.com/${activeDomainMeta.slug}` : 'aamodpaudel.com'}
                 canGoPrev={activeOrder !== null}
                 canGoNext={activeOrder !== 5}
-                onPrev={() => handleLobeClick(activeOrder === null ? null : activeOrder === 1 ? null : activeOrder - 1)}
-                onNext={() => handleLobeClick(activeOrder === null ? 1 : activeOrder + 1)}
+                onPrev={goPrev}
+                onNext={goNext}
                 theme={theme}
                 onToggleTheme={toggleTheme}
                 vscoUrl={settings.vscoUrl}
@@ -197,49 +185,50 @@ export function MindScene() {
                         </p>
                     )}
 
-                    <div
-                        ref={stageRef}
-                        className="relative flex w-full flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-center"
-                    >
-                        <div ref={canvasContainerRef} className="relative aspect-square w-full max-w-[300px] shrink-0">
-                            <BrainCanvas
-                                activeOrder={activeOrder}
-                                onLobeClick={handleLobeClick}
-                                onSocketProjected={handleSocketProjected}
-                                containerRef={canvasContainerRef}
-                            />
+                    <div className="mt-6 flex w-full flex-col items-center gap-8">
+                        <div className="flex w-full items-center justify-center gap-3 sm:gap-6">
+                            <NavArrow direction="prev" disabled={activeOrder === null} onClick={goPrev} />
+                            <div className="relative aspect-square w-full max-w-[360px] min-w-0">
+                                <BrainCanvas activeOrder={activeOrder} onLobeClick={handleLobeClick} graphs={graphs} />
+                            </div>
+                            <NavArrow direction="next" disabled={activeOrder === 5} onClick={goNext} />
                         </div>
 
-                        {circuit && stageSize.width > 0 && (
-                            <CircuitTrace
-                                from={circuit.from}
-                                to={circuit.to}
-                                color={activeDomainInfo?.colorHex ?? 'var(--accent)'}
-                                width={stageSize.width}
-                                height={stageSize.height}
-                            />
-                        )}
-
                         {activeDomainInfo && (
-                            <div
-                                ref={domainBoxWrapperRef}
-                                style={{
-                                    opacity: showBox ? 1 : 0,
-                                    pointerEvents: showBox ? 'auto' : 'none',
-                                    transition: 'opacity 0.3s ease-out',
-                                }}
-                            >
-                                <DomainBox info={activeDomainInfo} onExplore={() => setGraphOpen((g) => !g)} onClose={resetToIdle} exploring={graphOpen} />
+                            <div className="flex max-w-xl flex-col items-center gap-2">
+                                <div className="flex items-center gap-2">
+                                    {activeBinary && (
+                                        <span
+                                            className="rounded-full border px-1.5 py-0.5 font-mono text-[10px] tracking-wide opacity-60"
+                                            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+                                        >
+                                            {activeBinary}
+                                        </span>
+                                    )}
+                                    <h2 className="text-xl font-semibold">{activeDomainInfo.label}</h2>
+                                </div>
+                                <p className="text-sm" style={{ color: 'var(--muted)' }}>
+                                    {activeDomainInfo.tagline}
+                                </p>
+                                {activeDomainInfo.description && (
+                                    <div className="mt-1 text-sm leading-relaxed">
+                                        <RichContent html={activeDomainInfo.description} />
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        {graphOpen && activeDomainMeta && (
-                            <NotesGraph
-                                domainKey={activeDomainMeta.key}
-                                domainSlug={activeDomainMeta.slug}
-                                color={activeDomainInfo?.colorHex ?? 'var(--accent)'}
-                                onBack={() => setGraphOpen(false)}
-                            />
+                        {activeDomainMeta && (
+                            <div className="flex w-full max-w-xl items-center justify-between text-sm">
+                                <button onClick={resetToIdle} className="underline opacity-70 hover:opacity-100">
+                                    ← Back to brain
+                                </button>
+                                <span style={{ color: 'var(--muted)' }}>
+                                    {noteCount === 0
+                                        ? 'No published notes yet'
+                                        : `${noteCount} note${noteCount === 1 ? '' : 's'} — click one in the case to read it`}
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>

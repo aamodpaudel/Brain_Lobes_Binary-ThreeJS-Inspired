@@ -18,6 +18,7 @@ interface DomainMeta {
   order: number; // 1-5, matches BrainModel lobe order
   label: string;
   lobe: string;
+  binary: string; // matches the lobe's socket tag in BrainModel's meshToBinaryMap
 }
 
 export const DOMAINS: Record<DomainKey, DomainMeta> = {
@@ -27,6 +28,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
     order: 1,
     label: 'Pure Mathematics',
     lobe: 'Frontal',
+    binary: '0001',
   },
   THEORETICAL_PHYSICS: {
     key: 'THEORETICAL_PHYSICS',
@@ -34,6 +36,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
     order: 2,
     label: 'Theoretical Physics',
     lobe: 'Parietal',
+    binary: '0010',
   },
   COMPUTATIONAL_NEUROSCIENCE: {
     key: 'COMPUTATIONAL_NEUROSCIENCE',
@@ -41,6 +44,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
     order: 3,
     label: 'Computational Neuroscience',
     lobe: 'Occipital',
+    binary: '0011',
   },
   PHILOSOPHY_LIFE: {
     key: 'PHILOSOPHY_LIFE',
@@ -48,6 +52,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
     order: 4,
     label: 'Philosophy & Life',
     lobe: 'Temporal',
+    binary: '0100',
   },
   APPLIED_AI: {
     key: 'APPLIED_AI',
@@ -55,6 +60,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
     order: 5,
     label: 'Applied Artificial Intelligence',
     lobe: 'Cerebellum',
+    binary: '0101',
   },
 };
 
