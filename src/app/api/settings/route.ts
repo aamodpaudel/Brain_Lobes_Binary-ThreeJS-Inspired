@@ -13,6 +13,7 @@ export async function GET() {
                     tagline: 'A maths & physics enthusiast, programmer, and a curious human being.',
                     bio: '',
                     email: '',
+                    instructionText: 'Click a region of the brain to wander into one of the five things I think about most.',
                 },
             });
         }
@@ -38,6 +39,7 @@ export async function PUT(req: Request) {
                 tagline: data.tagline,
                 email: data.email,
                 bio: data.bio,
+                instructionText: data.instructionText,
                 githubUrl: data.githubUrl || null,
                 linkedinUrl: data.linkedinUrl || null,
                 twitterUrl: data.twitterUrl || null,

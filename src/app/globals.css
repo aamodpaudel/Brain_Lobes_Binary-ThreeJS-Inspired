@@ -13,7 +13,6 @@
   --glass-bg: rgba(255, 255, 255, 0.35);
   --glass-topbar-bg: rgba(255, 255, 255, 0.25);
   --glass-border: rgba(0, 0, 0, 0.08);
-  --traffic-dot: #bdbdbd;
 }
 
 :root[data-theme="dark"] {
@@ -27,7 +26,6 @@
   --glass-bg: rgba(30, 31, 36, 0.5);
   --glass-topbar-bg: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.12);
-  --traffic-dot: #4b4c52;
 }
 
 html,

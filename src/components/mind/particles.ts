@@ -89,6 +89,17 @@ export interface GraphEdgeLike {
 
 const LAYOUT_RADIUS = 1.15; // stays well inside the case's CUBE_HALF (1.6)
 
+/** A seed derived from the actual note ids/edges, not just their counts — two domains that
+ * happen to both have e.g. 2 notes and 1 edge previously got the exact same seed (and therefore
+ * an identical-looking layout, just recolored). Note ids are unique across every domain, so
+ * hashing them in makes each domain's arrangement genuinely its own. */
+function graphSeed(nodes: GraphNodeLike[], edges: GraphEdgeLike[]): number {
+    let h = nodes.length * 733 + edges.length * 17 + 11;
+    for (const n of nodes) h = (h * 2654435761 + n.id * 97) | 0;
+    for (const e of edges) h = (h * 2654435761 + e.source * 13 + e.target * 7) | 0;
+    return h;
+}
+
 /** A small force-directed relaxation in 3D — repulsion between every pair, spring attraction
  * along real edges, gentle centering — seeded on a Fibonacci-sphere so it doesn't start as a
  * degenerate pile. Cheap enough to just run synchronously for the handful of notes a domain has. */
@@ -100,19 +111,18 @@ export function layoutGraphIn3D(nodes: GraphNodeLike[], edges: GraphEdgeLike[]):
         return positions;
     }
 
-    const rand = mulberry32(nodes.length * 733 + edges.length * 17 + 11);
+    const rand = mulberry32(graphSeed(nodes, edges));
 
-    nodes.forEach((n, i) => {
-        const y = 1 - (i / (nodes.length - 1)) * 2;
-        const r = Math.sqrt(Math.max(0, 1 - y * y));
-        const theta = i * 2.399963; // golden angle
-        const seed = new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r).multiplyScalar(LAYOUT_RADIUS * 0.5);
-        // A small random nudge breaks an exact-symmetry degenerate case: with very few nodes
-        // (2 is the worst offender) the Fibonacci-sphere formula alone places every point on a
-        // single axis (r=0 at both poles), which the force simulation below then has no way to
-        // spread out of — it only ever pushes/pulls along that one line.
-        seed.add(new THREE.Vector3((rand() - 0.5) * 0.35, (rand() - 0.5) * 0.35, (rand() - 0.5) * 0.35));
-        positions.set(n.id, seed);
+    // A genuinely random direction per node, not a Fibonacci-sphere formula — the formula's
+    // even spacing is only actually useful for large N; for the small graphs these domains
+    // have (2-4 notes is typical), it instead put every node within a small wobble of the
+    // same Y axis (both poles of a 2-point "sphere" sit at r=0), so every domain's pair came
+    // out looking like a near-vertical line at a slightly different tilt. Full randomness,
+    // seeded per-domain, gives each domain its own orientation, not just its own wobble.
+    nodes.forEach((n) => {
+        const dir = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
+        const r = LAYOUT_RADIUS * (0.25 + rand() * 0.45);
+        positions.set(n.id, dir.multiplyScalar(r));
     });
 
     const ids = nodes.map((n) => n.id);
@@ -132,19 +142,22 @@ export function layoutGraphIn3D(nodes: GraphNodeLike[], edges: GraphEdgeLike[]):
                     diff.set(rand() - 0.5, rand() - 0.5, rand() - 0.5);
                     dist = diff.length() || 1e-4;
                 }
-                const repulsion = diff.normalize().multiplyScalar(0.028 / (dist * dist));
+                const repulsion = diff.normalize().multiplyScalar(0.024 / (dist * dist));
                 forces.get(ids[i])!.add(repulsion);
                 forces.get(ids[j])!.sub(repulsion);
             }
         }
 
+        // Connected notes pull in noticeably tighter than the general repulsion spreads
+        // everything else apart — the closeness itself is what reads as "these are related",
+        // same idea as a semantic-similarity graph clustering related nodes together.
         for (const e of validEdges) {
             const a = positions.get(e.source)!;
             const b = positions.get(e.target)!;
             const diff = b.clone().sub(a);
             const dist = diff.length() || 1e-4;
-            const targetLen = 0.75;
-            const pull = diff.normalize().multiplyScalar((dist - targetLen) * 0.05);
+            const targetLen = 0.5;
+            const pull = diff.normalize().multiplyScalar((dist - targetLen) * 0.065);
             forces.get(e.source)!.add(pull);
             forces.get(e.target)!.sub(pull);
         }
@@ -166,7 +179,10 @@ export function layoutGraphIn3D(nodes: GraphNodeLike[], edges: GraphEdgeLike[]):
     return positions;
 }
 
-const NODE_CLUSTER_JITTER = 0.07;
+// Tight enough that the soft sprites (see MorphField's dot texture) overlap heavily and blend
+// into one smooth glowing knot under additive blending, rather than each particle's own soft
+// edge staying visible as a separate "petal" — which is what a wider spread looked like.
+const NODE_CLUSTER_JITTER = 0.045;
 
 /** Spreads the shared particle pool across the laid-out note positions — most particles land in
  * a tight jittered cluster around whichever note they're assigned to, so a note reads as a small
@@ -178,7 +194,9 @@ export function assignParticlesToNodes(
     particleCount: number,
 ): Float32Array {
     const out = new Float32Array(particleCount * 3);
-    const rand = mulberry32(particleCount * 31 + nodeIds.length * 7 + 3);
+    let seed = particleCount * 31 + nodeIds.length * 7 + 3;
+    for (const id of nodeIds) seed = (seed * 2654435761 + id * 97) | 0;
+    const rand = mulberry32(seed);
 
     if (nodeIds.length === 0) {
         for (let i = 0; i < particleCount; i++) {
@@ -195,7 +213,10 @@ export function assignParticlesToNodes(
         const id = nodeIds[i % nodeIds.length];
         const center = nodePositions.get(id) ?? new THREE.Vector3();
         const dir = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
-        const p = center.clone().addScaledVector(dir, rand() * NODE_CLUSTER_JITTER);
+        // Biased toward the center (rand()**1.6, not a plain uniform radius) so the cluster has
+        // a dense, bright core under additive blending with a soft falloff at the edges — a
+        // glowing knot rather than a uniformly-speckled ball.
+        const p = center.clone().addScaledVector(dir, Math.pow(rand(), 1.6) * NODE_CLUSTER_JITTER);
         out[i * 3] = p.x;
         out[i * 3 + 1] = p.y;
         out[i * 3 + 2] = p.z;

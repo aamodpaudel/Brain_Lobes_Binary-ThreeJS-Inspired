@@ -9,6 +9,7 @@ interface GlobalSettingsData {
     title: string;
     tagline: string;
     bio: string;
+    instructionText: string;
     email: string;
     githubUrl: string | null;
     linkedinUrl: string | null;
@@ -93,6 +94,19 @@ export default function SettingsPage() {
                 <div>
                     <label className={labelClass}>Bio</label>
                     <QuillEditor value={data.bio} onChange={(val) => setData({ ...data, bio: val })} />
+                </div>
+
+                <div>
+                    <label className={labelClass}>Idle instruction text</label>
+                    <input
+                        className={inputClass}
+                        value={data.instructionText}
+                        onChange={(e) => setData({ ...data, instructionText: e.target.value })}
+                        placeholder="Click a region of the brain to wander into one of the five things I think about most."
+                    />
+                    <p className="mt-1 text-xs opacity-60">
+                        Shown in italics under the bio, only while the case is idle (no domain selected).
+                    </p>
                 </div>
 
                 <div className="mt-2 flex items-center gap-4">
