@@ -28,13 +28,19 @@ npm install
 Create or verify `.env` in the project root with:
 
 ```env
-DATABASE_URL="file:./dev.db"
+LOCAL_DATABASE_URL="file:./dev.db"
+ADMIN_EMAIL="you@example.com"
+ADMIN_PASSWORD="choose-a-password"
 ```
 
 Notes:
 
-- This project uses SQLite with Prisma.
-- The SQLite file used by Prisma is `prisma/dev.db`.
+- This project uses SQLite (via Prisma's libSQL driver adapter — see `src/lib/prisma.ts`). The
+  file used is `prisma/dev.db`.
+- Local dev never needs Turso or Cloudflare R2 — those are production-only. See `DEPLOY.md` for
+  the free hosting setup (Vercel + Turso + R2) and what the extra env vars in `.env` are for.
+- File uploads (note attachments, gallery photos) fall back to writing under `public/uploads/`
+  when the R2 env vars are unset, which is the case for a plain local `.env`.
 
 ## 3. Initialize Prisma
 

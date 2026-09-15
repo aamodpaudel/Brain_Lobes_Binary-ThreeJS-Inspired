@@ -1,8 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { DOMAIN_LIST } from '../src/lib/domains';
-
-const prisma = new PrismaClient();
+// Reuses the same adapter-aware client the app itself uses (see src/lib/prisma.ts), so this
+// targets the local sqlite file by default and a real Turso database when TURSO_DATABASE_URL /
+// TURSO_AUTH_TOKEN are set — e.g. `TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... npx prisma db seed`
+// to seed production for the first time.
+import { prisma } from '../src/lib/prisma';
 
 async function main() {
     const adminEmail = process.env.ADMIN_EMAIL;
