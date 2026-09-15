@@ -14,36 +14,33 @@ the production side.
 
 ## 1. Turso (database)
 
+No CLI install needed — everything here works from [app.turso.tech](https://app.turso.tech) plus
+commands run from this project.
+
 1. Sign up at [turso.tech](https://turso.tech) (free — no card required for the free tier).
-2. Install the CLI and log in:
+2. In the dashboard, create a database (pick any name and a region close to you) — this is a
+   button right in the UI now, not CLI-only.
+3. Open the database you just created. Its detail page shows the connection URL
+   (`libsql://<name>-<org>.turso.io`) — that's `TURSO_DATABASE_URL`.
+4. Create an auth token for it from the same page (or the account/database token settings) —
+   that's `TURSO_AUTH_TOKEN`. Keep both; you'll paste them into Vercel in step 5.
+5. Push this project's schema to it. Prisma's own `migrate`/`db push` commands only ever target
+   the local file (see the comment in `prisma.config.ts` for why), and the dashboard doesn't
+   have a SQL console — so this repo has a small script that applies the schema straight over
+   Turso's HTTP API instead, no CLI required:
    ```bash
-   curl -sSfL https://get.tur.so/install.sh | bash
-   turso auth login
+   # bash
+   TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." node scripts/turso-apply-schema.mjs
    ```
-   (Windows: use WSL, or create the database from the Turso web dashboard instead — the CLI is
-   only needed for the commands below, which you can also run as raw SQL from the dashboard's
-   shell.)
-3. Create a database and get its connection info:
-   ```bash
-   turso db create my-mind-in-a-box
-   turso db show my-mind-in-a-box --url
-   turso db tokens create my-mind-in-a-box
+   ```powershell
+   # PowerShell
+   $env:TURSO_DATABASE_URL="libsql://..."; $env:TURSO_AUTH_TOKEN="..."; node scripts/turso-apply-schema.mjs
    ```
-   The first command's output is `TURSO_DATABASE_URL` (`libsql://...`), the second is
-   `TURSO_AUTH_TOKEN`. Keep both — you'll paste them into Vercel in step 5.
+   It prints `Done.` on success. (If you do have the Turso CLI installed, `turso db shell
+   <name> < schema.sql` works too — see "Ongoing schema changes" at the bottom either way.)
 
-4. Push this project's schema to it. Prisma's own `migrate`/`db push` commands only ever target
-   the local file (see the comment in `prisma.config.ts` for why), so export the schema as SQL
-   and apply it with Turso's own CLI instead:
-   ```bash
-   npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > schema.sql
-   turso db shell my-mind-in-a-box < schema.sql
-   ```
-   See "Ongoing schema changes" at the bottom for how to do this again later, once the database
-   isn't empty.
-
-5. Seed it with the admin account and starter content, from your own machine, pointed at Turso
-   instead of the local file:
+6. Seed it with the admin account and starter content, the same way, pointed at Turso instead of
+   the local file:
    ```bash
    TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npx tsx prisma/seed.ts
    ```
@@ -74,8 +71,8 @@ You now have all five R2 values: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET
 
    | Name | Value |
    |---|---|
-   | `TURSO_DATABASE_URL` | from step 1.3 |
-   | `TURSO_AUTH_TOKEN` | from step 1.3 |
+   | `TURSO_DATABASE_URL` | from step 1.3–1.4 |
+   | `TURSO_AUTH_TOKEN` | from step 1.3–1.4 |
    | `R2_ACCOUNT_ID` | from step 2 |
    | `R2_ACCESS_KEY_ID` | from step 2 |
    | `R2_SECRET_ACCESS_KEY` | from step 2 |
@@ -89,7 +86,7 @@ You now have all five R2 values: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET
    `src/lib/prisma.ts`), and the build doesn't need a live database connection.
 4. Deploy. Vercel builds with `npm run build` and serves it — no other config needed.
 5. Once it's live, visit `/admin/login` on your new domain and sign in with the admin account
-   you seeded in step 1.5.
+   you seeded in step 1.6.
 
 ## Ongoing schema changes
 
@@ -106,8 +103,9 @@ npx prisma migrate diff \
   --to-schema-datamodel prisma/schema.prisma \
   --script > change.sql
 
-turso db shell my-mind-in-a-box < change.sql   # applies just the diff to production
+TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." node scripts/turso-apply-schema.mjs change.sql
+# (or, with the Turso CLI installed: turso db shell my-mind-in-a-box < change.sql)
 ```
 
-Skim `change.sql` before piping it in, the same way you'd review any migration. Then commit and
+Skim `change.sql` before applying it, the same way you'd review any migration. Then commit and
 push your code changes — Vercel redeploys automatically on every push to `main`.
