@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'isomorphic-dompurify';
 import katex from 'katex';
 import renderMathInElement from 'katex/dist/contrib/auto-render';
@@ -79,16 +79,31 @@ interface RichContentProps {
     className?: string;
 }
 
-/** Sanitizes and renders Quill-authored HTML, including KaTeX formulas and hyperlinks. */
+/** Sanitizes and renders Quill-authored HTML, including KaTeX formulas and hyperlinks.
+ *
+ * Sanitizing only happens client-side, in an effect, even though this is already a "use
+ * client" component — a page whose *server* component parent passes real data straight into
+ * this on first render (note pages, unlike the home page's client-fetched data) still gets this
+ * rendered as part of the server-side HTML pass, and isomorphic-dompurify's server-side path
+ * runs through jsdom, which doesn't bundle cleanly for Vercel's serverless functions on
+ * Next.js 16 ("Failed to load external module jsdom…", a known issue upstream). Never calling
+ * sanitize() outside a client effect means jsdom is never invoked at all, sidestepping that
+ * entirely rather than fighting the bundler config to make it work. */
 export function RichContent({ html, className }: RichContentProps) {
     const ref = useRef<HTMLDivElement>(null);
-    useKatexRender(ref, [html]);
+    const [sanitized, setSanitized] = useState<string | null>(null);
+
+    useEffect(() => {
+        setSanitized(sanitize(html));
+    }, [html]);
+
+    useKatexRender(ref, [sanitized]);
 
     return (
         <div
             ref={ref}
             className={`quill-content${className ? ` ${className}` : ''}`}
-            dangerouslySetInnerHTML={{ __html: sanitize(html) }}
+            {...(sanitized !== null ? { dangerouslySetInnerHTML: { __html: sanitized } } : {})}
         />
     );
 }
