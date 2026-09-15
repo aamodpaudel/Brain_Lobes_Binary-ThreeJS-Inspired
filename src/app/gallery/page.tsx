@@ -6,6 +6,11 @@ export const metadata = {
     title: 'Gallery — My Mind In A Box',
 };
 
+// Without this, Next statically prerenders this page once at build time (it's a fixed route
+// with no params, so nothing else marks it dynamic) — meaning photos uploaded through the admin
+// panel afterward would never show up here without a whole new deploy.
+export const dynamic = 'force-dynamic';
+
 export default async function GalleryPage() {
     const photos = await prisma.galleryPhoto.findMany({
         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
