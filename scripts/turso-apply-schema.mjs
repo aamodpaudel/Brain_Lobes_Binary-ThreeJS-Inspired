@@ -25,13 +25,22 @@ const sql = sqlFilePath
           encoding: 'utf8',
       });
 
-const statements = sql
+let statements = sql
     .split('\n')
     .filter((line) => !line.trim().startsWith('--'))
     .join('\n')
     .split(';')
     .map((s) => s.trim())
     .filter(Boolean);
+
+// The default (no-argument) mode re-applies the *entire* schema every time it's run, which is
+// convenient to run again if you're not sure it worked, or after rotating a token — so make it
+// idempotent rather than erroring on "table already exists". An explicit change.sql (the
+// incremental-diff path) is left exactly as generated: that one's meant to apply cleanly once,
+// and silently no-op'ing a real change there would hide a mistake rather than help.
+if (!sqlFilePath) {
+    statements = statements.map((s) => s.replace(/^CREATE (TABLE|(?:UNIQUE )?INDEX) "/, 'CREATE $1 IF NOT EXISTS "'));
+}
 
 if (statements.length === 0) {
     console.log('Nothing to apply.');
