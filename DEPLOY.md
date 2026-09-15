@@ -78,12 +78,12 @@ You now have all five R2 values: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET
    | `R2_SECRET_ACCESS_KEY` | from step 2 |
    | `R2_BUCKET_NAME` | from step 2 |
    | `R2_PUBLIC_URL` | from step 2 |
-   | `ADMIN_EMAIL` | only needed again if you ever re-run the seed script |
-   | `ADMIN_PASSWORD` | only needed again if you ever re-run the seed script |
 
-   `LOCAL_DATABASE_URL` is deliberately **not** set here — leaving it unset in production is
-   fine, since the app only falls back to it when `TURSO_DATABASE_URL` is absent (see
-   `src/lib/prisma.ts`), and the build doesn't need a live database connection.
+   That's all seven — `LOCAL_DATABASE_URL` is deliberately **not** set here (the app only falls
+   back to it when `TURSO_DATABASE_URL` is absent, see `src/lib/prisma.ts`, and the build doesn't
+   need a live database connection), and neither are `ADMIN_EMAIL`/`ADMIN_PASSWORD` — only
+   `prisma/seed.ts` reads those, and that always runs from your own machine against Turso, the
+   same way you already ran it once, never from Vercel itself.
 4. Deploy. Vercel builds with `npm run build` and serves it — no other config needed.
 5. Once it's live, visit `/admin/login` on your new domain and sign in with the admin account
    you seeded in step 1.6.
