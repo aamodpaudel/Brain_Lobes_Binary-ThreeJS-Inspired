@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cardClass, secondaryButtonClass } from '@/components/admin/adminFormStyles';
+import { uploadFile } from '@/lib/clientUpload';
 
 interface Photo {
     id: number;
@@ -32,12 +33,10 @@ export default function GalleryAdminPage() {
         setUploading(true);
         setError('');
         for (const file of Array.from(files)) {
-            const body = new FormData();
-            body.append('file', file);
-            const res = await fetch('/api/gallery', { method: 'POST', body });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({ error: 'Upload failed' }));
-                setError(err.error || 'Upload failed');
+            try {
+                await uploadFile(file, 'gallery', '/api/gallery');
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Upload failed');
                 break;
             }
         }

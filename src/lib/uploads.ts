@@ -2,11 +2,16 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Local dev fallback only — public/uploads works fine on a machine with a persistent disk, but
 // not on Vercel's ephemeral filesystem. Whenever R2 credentials are present (production), those
 // are used instead; this path only runs when they're absent (`npm run dev` with a bare .env).
 const UPLOAD_ROOT = path.join(process.cwd(), 'public', 'uploads');
+// Vercel serverless functions cap request bodies at 4.5MB regardless of this — real photos
+// routinely exceed that, which is why production goes through a presigned direct-to-R2 upload
+// instead of ever sending the file through our own function (see createPresignedUpload below).
+// This limit is the one that actually applies there, and to the local-fallback path here.
 const MAX_SIZE = 20 * 1024 * 1024; // 20MB
 
 // Deliberately excludes anything a browser might execute as a document (html, svg with
@@ -26,6 +31,8 @@ const ALLOWED_MIME_TYPES = new Set([
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 
+export type UploadSubdir = 'notes' | 'gallery';
+
 export interface SavedUpload {
     path: string; // a full R2 URL in production, or a local "/uploads/..." path in dev
     filename: string; // original filename, for display
@@ -33,7 +40,31 @@ export interface SavedUpload {
     size: number;
 }
 
+export interface PresignedUpload {
+    uploadUrl: string; // PUT here directly from the browser
+    path: string; // the eventual public URL — save this once the PUT succeeds
+    filename: string;
+    mimeType: string;
+    size: number;
+}
+
 export class UploadError extends Error {}
+
+function validate(filename: string, mimeType: string, size: number): void {
+    if (!filename || size <= 0) throw new UploadError('No file provided');
+    if (size > MAX_SIZE) throw new UploadError('File too large (20MB max)');
+    if (!ALLOWED_MIME_TYPES.has(mimeType)) throw new UploadError(`File type not allowed: ${mimeType || 'unknown'}`);
+}
+
+/** Normalizes R2_PUBLIC_URL — trims any trailing slash, and adds `https://` if it's missing,
+ * since a bare hostname like "files.example.com" (an easy thing to paste without the scheme)
+ * would otherwise be treated as a *relative* URL by the browser wherever it's used as an <img
+ * src> or <a href>, silently breaking every uploaded file's link instead of erroring loudly. */
+export function publicBaseUrl(): string {
+    const raw = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+    if (!raw) return '';
+    return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
 
 function r2Client(): S3Client | null {
     const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY } = process.env;
@@ -42,14 +73,20 @@ function r2Client(): S3Client | null {
         region: 'auto',
         endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
         credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY },
+        // Recent AWS SDK versions add an automatic CRC32 request checksum by default. For a
+        // *presigned* PUT that's actively wrong: the checksum gets computed (and signed) against
+        // an empty body here, since the real file's bytes don't exist yet at presign time — the
+        // browser's later PUT of the actual file would then mismatch that baked-in checksum and
+        // fail. R2 doesn't require this the way AWS S3 does, so just turn it off.
+        requestChecksumCalculation: 'WHEN_REQUIRED',
     });
 }
 
-function buildKey(file: File, subdir: 'notes' | 'gallery'): string {
-    const ext = path.extname(file.name).slice(0, 10);
+function buildKey(filename: string, subdir: UploadSubdir): string {
+    const ext = path.extname(filename).slice(0, 10);
     const safeBase =
         path
-            .basename(file.name, ext)
+            .basename(filename, ext)
             .replace(/[^a-zA-Z0-9_-]/g, '_')
             .slice(0, 60) || 'file';
     // Randomized so nothing collides or overwrites, and so the key itself never leaks the
@@ -57,39 +94,48 @@ function buildKey(file: File, subdir: 'notes' | 'gallery'): string {
     return `${subdir}/${randomUUID()}-${safeBase}${ext}`;
 }
 
-/** Validates and stores an uploaded file, returning what a NoteAttachment or GalleryPhoto row
- * needs. Goes to Cloudflare R2 when R2_* env vars are set (production), or public/uploads/
- * otherwise (local dev) — see the module comment above. */
-export async function saveUpload(file: File, subdir: 'notes' | 'gallery'): Promise<SavedUpload> {
-    if (!file || file.size === 0) throw new UploadError('No file provided');
-    if (file.size > MAX_SIZE) throw new UploadError('File too large (20MB max)');
-    if (!ALLOWED_MIME_TYPES.has(file.type)) throw new UploadError(`File type not allowed: ${file.type || 'unknown'}`);
-
-    const key = buildKey(file, subdir);
-    const mimeType = file.type || 'application/octet-stream';
-    const buffer = Buffer.from(await file.arrayBuffer());
+/** Returns null when R2 isn't configured (local dev) — callers should fall back to saveUpload
+ * (a plain multipart POST) in that case. When it IS configured, gives the browser a URL to PUT
+ * the file straight to R2 with, so the file's bytes never pass through our own function at all —
+ * the only way around Vercel's 4.5MB request body limit, since that's a platform limit on the
+ * function itself, not something any of our own code or Next.js config can raise. */
+export async function createPresignedUpload(filename: string, mimeType: string, size: number, subdir: UploadSubdir): Promise<PresignedUpload | null> {
+    validate(filename, mimeType, size);
 
     const client = r2Client();
-    if (client) {
-        const bucket = process.env.R2_BUCKET_NAME;
-        const publicBase = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
-        if (!bucket || !publicBase) {
-            throw new UploadError('R2 is only partially configured — check R2_BUCKET_NAME and R2_PUBLIC_URL');
-        }
+    if (!client) return null;
 
-        await client.send(
-            new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: buffer,
-                ContentType: mimeType,
-                // Keys are randomized/unique, so a long-lived cache is always safe.
-                CacheControl: 'public, max-age=31536000, immutable',
-            }),
-        );
-
-        return { path: `${publicBase}/${key}`, filename: file.name, mimeType, size: file.size };
+    const bucket = process.env.R2_BUCKET_NAME;
+    const publicBase = publicBaseUrl();
+    if (!bucket || !publicBase) {
+        throw new UploadError('R2 is only partially configured — check R2_BUCKET_NAME and R2_PUBLIC_URL');
     }
+
+    const key = buildKey(filename, subdir);
+    const uploadUrl = await getSignedUrl(
+        client,
+        new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: mimeType,
+            CacheControl: 'public, max-age=31536000, immutable',
+        }),
+        { expiresIn: 300 },
+    );
+
+    return { uploadUrl, path: `${publicBase}/${key}`, filename, mimeType, size };
+}
+
+/** The local-dev fallback: writes the file to public/uploads/ via our own server, going through
+ * the request body the normal way. Only meant to be reached when createPresignedUpload returned
+ * null (R2 unconfigured) — on Vercel, a file anywhere near a real photo's size would 413 before
+ * this function even ran. */
+export async function saveUpload(file: File, subdir: UploadSubdir): Promise<SavedUpload> {
+    validate(file?.name, file?.type, file?.size ?? 0);
+
+    const key = buildKey(file.name, subdir);
+    const mimeType = file.type || 'application/octet-stream';
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     const fullPath = path.join(UPLOAD_ROOT, key);
     await mkdir(path.dirname(fullPath), { recursive: true });
@@ -112,7 +158,7 @@ export async function deleteUploadFile(storedPath: string): Promise<void> {
 
     const client = r2Client();
     const bucket = process.env.R2_BUCKET_NAME;
-    const publicBase = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
+    const publicBase = publicBaseUrl();
     if (!client || !bucket || !publicBase || !storedPath.startsWith(`${publicBase}/`)) return;
 
     const key = storedPath.slice(publicBase.length + 1);
