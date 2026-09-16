@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { DOMAIN_LIST, type DomainKey } from '@/lib/domains';
 import { QuillEditor } from '@/components/admin/QuillEditor';
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass, cardClass } from '@/components/admin/adminFormStyles';
+import { uploadFile } from '@/lib/clientUpload';
 
 interface Attachment {
     id: number;
@@ -60,20 +61,17 @@ export default function NoteEditorPage() {
         setNote(refreshed);
     };
 
-    const uploadFile = async (file: File) => {
+    const handleFileUpload = async (file: File) => {
         if (!note) return;
         setUploading(true);
         setAttachError('');
-        const body = new FormData();
-        body.append('file', file);
-        const res = await fetch(`/api/notes/${note.id}/attachments`, { method: 'POST', body });
-        setUploading(false);
-        if (res.ok) {
+        try {
+            await uploadFile(file, 'notes', `/api/notes/${note.id}/attachments`);
             await refreshNote();
-        } else {
-            const err = await res.json().catch(() => ({ error: 'Upload failed' }));
-            setAttachError(err.error || 'Upload failed');
+        } catch (err) {
+            setAttachError(err instanceof Error ? err.message : 'Upload failed');
         }
+        setUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -181,7 +179,7 @@ export default function NoteEditorPage() {
                         type="file"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) uploadFile(file);
+                            if (file) handleFileUpload(file);
                         }}
                         disabled={uploading}
                         className="block w-full text-sm"
