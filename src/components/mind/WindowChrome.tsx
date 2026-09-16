@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Camera, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Camera, Images, Search } from 'lucide-react';
 
 export interface AddressBarPage {
     /** Full display path, e.g. "aamodpaudel.com/pure-mathematics" */
@@ -128,10 +128,10 @@ export function WindowChrome({
             style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-bg)' }}
         >
             <div
-                className="flex h-12 shrink-0 items-center gap-1.5 border-b px-2.5 backdrop-blur-md sm:gap-4 sm:px-4"
+                className="flex h-12 shrink-0 items-center gap-1 border-b px-2.5 backdrop-blur-md sm:gap-4 sm:px-4"
                 style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-topbar-bg)' }}
             >
-                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#ff5f57' }} />
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#febc2e' }} />
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#28c840' }} />
@@ -157,13 +157,13 @@ export function WindowChrome({
                     </button>
                 </div>
 
-                <button onClick={onToggleTheme} aria-label="Toggle theme" className="shrink-0 p-1 opacity-70 hover:opacity-100">
+                <button onClick={onToggleTheme} aria-label="Toggle theme" className="shrink-0 p-0.5 opacity-70 hover:opacity-100 sm:p-1">
                     {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
                 </button>
 
                 <AddressBar addressPath={addressPath} pages={pages} />
 
-                <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
+                <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-4">
                     {vscoUrl && (
                         <a
                             href={vscoUrl}
@@ -175,9 +175,12 @@ export function WindowChrome({
                             <Camera size={16} />
                         </a>
                     )}
+                    <a href="/gallery" aria-label="Photo gallery" className="p-0.5 opacity-70 hover:opacity-100 sm:p-1">
+                        <Images size={16} />
+                    </a>
                     <a
                         href="/admin"
-                        className="whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100"
+                        className="whitespace-nowrap rounded-full border px-2 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100 sm:px-2.5"
                         style={{ borderColor: 'var(--border)' }}
                     >
                         Admin
