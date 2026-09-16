@@ -48,7 +48,7 @@ function AddressBar({ addressPath, pages }: { addressPath: string; pages: Addres
     };
 
     return (
-        <div className="relative mx-auto w-full max-w-xs">
+        <div className="relative min-w-0 flex-1 sm:mx-auto sm:max-w-xs sm:flex-initial">
             <div
                 className="flex h-6 w-full items-center gap-1.5 rounded-md border px-2 text-[11px]"
                 style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
@@ -76,14 +76,14 @@ function AddressBar({ addressPath, pages }: { addressPath: string; pages: Addres
                             inputRef.current?.blur();
                         }
                     }}
-                    className="w-full bg-transparent text-center opacity-80 outline-none"
+                    className="w-full min-w-0 bg-transparent text-center opacity-80 outline-none"
                     aria-label="Go to page"
                 />
             </div>
 
             {open && filtered.length > 0 && (
                 <ul
-                    className="absolute left-1/2 top-[calc(100%+4px)] z-20 max-h-56 w-56 -translate-x-1/2 overflow-y-auto rounded-md border py-1 text-left text-xs shadow-lg"
+                    className="absolute left-1/2 top-[calc(100%+4px)] z-20 max-h-56 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto rounded-md border py-1 text-left text-xs shadow-lg"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
                 >
                     {filtered.map((p) => (
@@ -128,21 +128,21 @@ export function WindowChrome({
             style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-bg)' }}
         >
             <div
-                className="flex h-12 shrink-0 items-center gap-4 border-b px-4 backdrop-blur-md"
+                className="flex h-12 shrink-0 items-center gap-1.5 border-b px-2.5 backdrop-blur-md sm:gap-4 sm:px-4"
                 style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-topbar-bg)' }}
             >
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#ff5f57' }} />
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#febc2e' }} />
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#28c840' }} />
                 </div>
 
-                <div className="flex items-center overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex shrink-0 items-center overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)' }}>
                     <button
                         onClick={onPrev}
                         disabled={!canGoPrev}
                         aria-label="Previous domain"
-                        className="flex h-6 w-6 items-center justify-center border-r disabled:opacity-30"
+                        className="flex h-6 w-6 items-center justify-center border-r disabled:opacity-30 sm:h-7 sm:w-7"
                         style={{ borderColor: 'var(--border)' }}
                     >
                         <ChevronLeft size={14} />
@@ -151,31 +151,35 @@ export function WindowChrome({
                         onClick={onNext}
                         disabled={!canGoNext}
                         aria-label="Next domain"
-                        className="flex h-6 w-6 items-center justify-center disabled:opacity-30"
+                        className="flex h-6 w-6 items-center justify-center disabled:opacity-30 sm:h-7 sm:w-7"
                     >
                         <ChevronRight size={14} />
                     </button>
                 </div>
 
-                <button onClick={onToggleTheme} aria-label="Toggle theme" className="opacity-70 hover:opacity-100">
+                <button onClick={onToggleTheme} aria-label="Toggle theme" className="shrink-0 p-1 opacity-70 hover:opacity-100">
                     {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
                 </button>
 
                 <AddressBar addressPath={addressPath} pages={pages} />
 
-                <div className="ml-auto flex items-center gap-4">
+                <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
                     {vscoUrl && (
                         <a
                             href={vscoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Photography on VSCO"
-                            className="opacity-70 hover:opacity-100"
+                            className="hidden p-1 opacity-70 hover:opacity-100 sm:inline-flex"
                         >
                             <Camera size={16} />
                         </a>
                     )}
-                    <a href="/admin" className="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold opacity-70 hover:opacity-100" style={{ borderColor: 'var(--border)' }}>
+                    <a
+                        href="/admin"
+                        className="whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100"
+                        style={{ borderColor: 'var(--border)' }}
+                    >
                         Admin
                     </a>
                 </div>
