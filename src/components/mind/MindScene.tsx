@@ -165,7 +165,7 @@ export function MindScene() {
     }
 
     return (
-        <div className="min-h-screen w-full py-6 sm:py-10" style={{ background: 'var(--background)' }}>
+        <div className="min-h-screen w-full px-3 py-6 sm:px-0 sm:py-10" style={{ background: 'var(--background)' }}>
             <WindowChrome
                 addressPath={activeDomainMeta ? `aamodpaudel.com/${activeDomainMeta.slug}` : 'aamodpaudel.com'}
                 pages={pageOptions}
