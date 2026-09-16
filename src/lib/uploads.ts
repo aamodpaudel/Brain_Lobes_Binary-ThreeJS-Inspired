@@ -61,18 +61,37 @@ function validate(filename: string, mimeType: string, size: number): void {
  * would otherwise be treated as a *relative* URL by the browser wherever it's used as an <img
  * src> or <a href>, silently breaking every uploaded file's link instead of erroring loudly. */
 export function publicBaseUrl(): string {
-    const raw = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+    const raw = r2EnvVar('R2_PUBLIC_URL').replace(/\/+$/, '');
     if (!raw) return '';
     return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
 
+// A stray leading/trailing newline or space in a pasted env var value is a very easy mistake to
+// make (copying from a dashboard's "copy" button, a terminal, etc.) and a nasty one to debug —
+// it doesn't fail loudly, it just makes R2 look for a bucket/key that includes a literal "\n"
+// and silently doesn't match anything, which from the browser just looks like a CORS failure
+// (R2 returns no CORS headers for a request that doesn't resolve to a real bucket at all,
+// which is indistinguishable from a real CORS misconfiguration without inspecting the request
+// URL byte-for-byte). Every R2 env var is trimmed before use for exactly this reason.
+function r2EnvVar(name: string): string {
+    return (process.env[name] || '').trim();
+}
+
+/** Normalizes R2_BUCKET_NAME (see the trimming note above) — exported so route handlers doing
+ * their own sanity checks against a stored path use the exact same value this module does. */
+export function r2BucketName(): string {
+    return r2EnvVar('R2_BUCKET_NAME');
+}
+
 function r2Client(): S3Client | null {
-    const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY } = process.env;
-    if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) return null;
+    const accountId = r2EnvVar('R2_ACCOUNT_ID');
+    const accessKeyId = r2EnvVar('R2_ACCESS_KEY_ID');
+    const secretAccessKey = r2EnvVar('R2_SECRET_ACCESS_KEY');
+    if (!accountId || !accessKeyId || !secretAccessKey) return null;
     return new S3Client({
         region: 'auto',
-        endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-        credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY },
+        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+        credentials: { accessKeyId, secretAccessKey },
         // Recent AWS SDK versions add an automatic CRC32 request checksum by default. For a
         // *presigned* PUT that's actively wrong: the checksum gets computed (and signed) against
         // an empty body here, since the real file's bytes don't exist yet at presign time — the
@@ -105,7 +124,7 @@ export async function createPresignedUpload(filename: string, mimeType: string, 
     const client = r2Client();
     if (!client) return null;
 
-    const bucket = process.env.R2_BUCKET_NAME;
+    const bucket = r2BucketName();
     const publicBase = publicBaseUrl();
     if (!bucket || !publicBase) {
         throw new UploadError('R2 is only partially configured — check R2_BUCKET_NAME and R2_PUBLIC_URL');
@@ -157,7 +176,7 @@ export async function deleteUploadFile(storedPath: string): Promise<void> {
     }
 
     const client = r2Client();
-    const bucket = process.env.R2_BUCKET_NAME;
+    const bucket = r2BucketName();
     const publicBase = publicBaseUrl();
     if (!client || !bucket || !publicBase || !storedPath.startsWith(`${publicBase}/`)) return;
 
