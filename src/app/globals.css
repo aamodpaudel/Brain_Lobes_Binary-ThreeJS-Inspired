@@ -63,9 +63,31 @@ a {
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
   word-break: normal !important;
-  text-align: left !important;
   line-height: inherit !important;
   max-width: 100%;
+}
+
+.quill-content *:not(.katex, .katex *):not([class*="ql-align-"]) {
+  text-align: left !important;
+}
+
+/* Bio and domain descriptions default to centered instead of left; note content is unaffected. */
+.quill-content.align-center-default *:not(.katex, .katex *):not([class*="ql-align-"]) {
+  text-align: center !important;
+}
+
+/* Per-paragraph alignment chosen in the editor always wins over either default above. */
+.quill-content .ql-align-left {
+  text-align: left !important;
+}
+.quill-content .ql-align-center {
+  text-align: center !important;
+}
+.quill-content .ql-align-right {
+  text-align: right !important;
+}
+.quill-content .ql-align-justify {
+  text-align: justify !important;
 }
 
 .quill-content p {

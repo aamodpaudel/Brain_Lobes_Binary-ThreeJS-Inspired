@@ -214,7 +214,7 @@ export function MindScene() {
 
                     {settings.bio && (
                         <div className="max-w-xl text-sm leading-relaxed">
-                            <RichContent html={settings.bio} />
+                            <RichContent html={settings.bio} className="align-center-default" />
                         </div>
                     )}
 
@@ -239,7 +239,7 @@ export function MindScene() {
                                 </p>
                                 {activeDomainInfo.description && (
                                     <div className="mt-1 text-sm leading-relaxed">
-                                        <RichContent html={activeDomainInfo.description} />
+                                        <RichContent html={activeDomainInfo.description} className="align-center-default" />
                                     </div>
                                 )}
                             </div>

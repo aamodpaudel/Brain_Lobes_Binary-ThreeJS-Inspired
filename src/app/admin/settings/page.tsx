@@ -93,7 +93,7 @@ export default function SettingsPage() {
 
                 <div>
                     <label className={labelClass}>Bio</label>
-                    <QuillEditor value={data.bio} onChange={(val) => setData({ ...data, bio: val })} />
+                    <QuillEditor value={data.bio} onChange={(val) => setData({ ...data, bio: val })} align />
                 </div>
 
                 <div>
