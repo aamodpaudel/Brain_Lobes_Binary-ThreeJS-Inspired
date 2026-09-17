@@ -128,7 +128,7 @@ export function WindowChrome({
             style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-bg)' }}
         >
             <div
-                className="flex h-12 shrink-0 items-center gap-1 border-b px-2.5 backdrop-blur-md sm:gap-4 sm:px-4"
+                className="flex h-14 shrink-0 items-center gap-1.5 border-b px-3 backdrop-blur-md sm:h-12 sm:gap-4 sm:px-4"
                 style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-topbar-bg)' }}
             >
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -157,7 +157,7 @@ export function WindowChrome({
                     </button>
                 </div>
 
-                <button onClick={onToggleTheme} aria-label="Toggle theme" className="shrink-0 p-0.5 opacity-70 hover:opacity-100 sm:p-1">
+                <button onClick={onToggleTheme} aria-label="Toggle theme" className="hidden shrink-0 p-1 opacity-70 hover:opacity-100 sm:inline-flex">
                     {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
                 </button>
 
