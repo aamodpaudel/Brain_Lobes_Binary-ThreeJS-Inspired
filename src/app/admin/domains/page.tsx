@@ -70,7 +70,7 @@ export default function DomainsPage() {
 
                             <div className="mt-4">
                                 <label className={labelClass}>Description (shown in the domain box)</label>
-                                <QuillEditor value={row.description} onChange={(val) => update(row.domain, { description: val })} />
+                                <QuillEditor value={row.description} onChange={(val) => update(row.domain, { description: val })} align />
                             </div>
 
                             <button

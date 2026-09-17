@@ -12,17 +12,20 @@ if (typeof window !== 'undefined') {
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false, loading: () => <p>Loading editor…</p> });
 
-const quillModules = {
-    toolbar: [
-        [{ size: [] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['link', 'formula'],
-        ['clean'],
-    ],
-};
+const baseToolbar = [
+    [{ size: [] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'formula'],
+    ['clean'],
+];
 
-export function QuillEditor({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+const quillModules = { toolbar: baseToolbar };
+// Bio and domain descriptions are short, centered blurbs shown inside a narrow box — alignment
+// is useful there in a way it isn't for note content, so only those editors get the button.
+const quillModulesWithAlign = { toolbar: [[{ align: [] }], ...baseToolbar] };
+
+export function QuillEditor({ value, onChange, align }: { value: string; onChange: (val: string) => void; align?: boolean }) {
     const [content, setContent] = useState(value);
 
     useEffect(() => {
@@ -34,7 +37,7 @@ export function QuillEditor({ value, onChange }: { value: string; onChange: (val
         <div className="rounded-md bg-white text-black">
             <ReactQuill
                 theme="snow"
-                modules={quillModules}
+                modules={align ? quillModulesWithAlign : quillModules}
                 value={content}
                 onChange={(val) => {
                     setContent(val);
