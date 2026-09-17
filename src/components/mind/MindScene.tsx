@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Github, Linkedin, Twitter } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, Github, Linkedin, Twitter } from 'lucide-react';
 import { RichContent } from '../RichContent';
 import { BrainCanvas } from './BrainCanvas';
 import { LocationClock } from './LocationClock';
@@ -189,26 +189,29 @@ export function MindScene() {
                         )}
                     </div>
 
-                    {(settings.email || settings.githubUrl || settings.linkedinUrl || settings.twitterUrl) && (
-                        <div className="flex flex-col items-center gap-3 border-b pb-6" style={{ borderColor: 'var(--border)' }}>
+                    {(settings.email || settings.githubUrl || settings.linkedinUrl || settings.vscoUrl || settings.twitterUrl) && (
+                        <div className="-mt-6 flex flex-wrap items-center justify-center gap-4 border-b pb-6" style={{ borderColor: 'var(--border)' }}>
                             {settings.email && <span className="text-sm opacity-80">{settings.email}</span>}
-                            <div className="flex flex-wrap justify-center gap-4">
-                                {settings.githubUrl && (
-                                    <a href={settings.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
-                                        <Github size={16} /> GitHub
-                                    </a>
-                                )}
-                                {settings.linkedinUrl && (
-                                    <a href={settings.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
-                                        <Linkedin size={16} /> LinkedIn
-                                    </a>
-                                )}
-                                {settings.twitterUrl && (
-                                    <a href={settings.twitterUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
-                                        <Twitter size={16} /> X / Twitter
-                                    </a>
-                                )}
-                            </div>
+                            {settings.githubUrl && (
+                                <a href={settings.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
+                                    <Github size={16} /> GitHub
+                                </a>
+                            )}
+                            {settings.linkedinUrl && (
+                                <a href={settings.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
+                                    <Linkedin size={16} /> LinkedIn
+                                </a>
+                            )}
+                            {settings.vscoUrl && (
+                                <a href={settings.vscoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
+                                    <Camera size={16} /> VSCO
+                                </a>
+                            )}
+                            {settings.twitterUrl && (
+                                <a href={settings.twitterUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
+                                    <Twitter size={16} /> X / Twitter
+                                </a>
+                            )}
                         </div>
                     )}
 
