@@ -137,12 +137,12 @@ export function WindowChrome({
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#28c840' }} />
                 </div>
 
-                <div className="flex shrink-0 items-center overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)' }}>
+                <div className="hidden shrink-0 items-center overflow-hidden rounded-md border sm:flex" style={{ borderColor: 'var(--border)' }}>
                     <button
                         onClick={onPrev}
                         disabled={!canGoPrev}
                         aria-label="Previous domain"
-                        className="flex h-6 w-6 items-center justify-center border-r disabled:opacity-30 sm:h-7 sm:w-7"
+                        className="flex h-7 w-7 items-center justify-center border-r disabled:opacity-30"
                         style={{ borderColor: 'var(--border)' }}
                     >
                         <ChevronLeft size={14} />
@@ -151,13 +151,13 @@ export function WindowChrome({
                         onClick={onNext}
                         disabled={!canGoNext}
                         aria-label="Next domain"
-                        className="flex h-6 w-6 items-center justify-center disabled:opacity-30 sm:h-7 sm:w-7"
+                        className="flex h-7 w-7 items-center justify-center disabled:opacity-30"
                     >
                         <ChevronRight size={14} />
                     </button>
                 </div>
 
-                <button onClick={onToggleTheme} aria-label="Toggle theme" className="hidden shrink-0 p-1 opacity-70 hover:opacity-100 sm:inline-flex">
+                <button onClick={onToggleTheme} aria-label="Toggle theme" className="shrink-0 p-1 opacity-70 hover:opacity-100">
                     {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
                 </button>
 
