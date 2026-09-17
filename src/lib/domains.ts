@@ -25,7 +25,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
   PURE_MATHEMATICS: {
     key: 'PURE_MATHEMATICS',
     slug: 'pure-mathematics',
-    order: 1,
+    order: 3,
     label: 'Pure Mathematics',
     lobe: 'Frontal',
     binary: '0001',
@@ -33,7 +33,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
   THEORETICAL_PHYSICS: {
     key: 'THEORETICAL_PHYSICS',
     slug: 'theoretical-physics',
-    order: 2,
+    order: 4,
     label: 'Theoretical Physics',
     lobe: 'Parietal',
     binary: '0010',
@@ -41,7 +41,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
   COMPUTATIONAL_NEUROSCIENCE: {
     key: 'COMPUTATIONAL_NEUROSCIENCE',
     slug: 'computational-neuroscience',
-    order: 3,
+    order: 1,
     label: 'Computational Neuroscience',
     lobe: 'Occipital',
     binary: '0011',
@@ -49,7 +49,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
   PHILOSOPHY_LIFE: {
     key: 'PHILOSOPHY_LIFE',
     slug: 'philosophy-life',
-    order: 4,
+    order: 5,
     label: 'Philosophy & Life',
     lobe: 'Temporal',
     binary: '0100',
@@ -57,7 +57,7 @@ export const DOMAINS: Record<DomainKey, DomainMeta> = {
   APPLIED_AI: {
     key: 'APPLIED_AI',
     slug: 'applied-ai',
-    order: 5,
+    order: 2,
     label: 'Applied Artificial Intelligence',
     lobe: 'Cerebellum',
     binary: '0101',

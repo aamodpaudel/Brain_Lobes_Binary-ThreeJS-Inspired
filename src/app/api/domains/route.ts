@@ -22,6 +22,11 @@ export async function GET() {
             });
         }
 
+        // `order` isn't editable from the admin UI — it only ever comes from this static list —
+        // so keep already-seeded rows in sync whenever it changes here in code.
+        const stale = DOMAIN_LIST.filter((d) => byDomain.get(d.key)?.order !== d.order);
+        await Promise.all(stale.map((d) => prisma.domainInfo.update({ where: { domain: d.key }, data: { order: d.order } })));
+
         const rows = await prisma.domainInfo.findMany({ orderBy: { order: 'asc' } });
         return NextResponse.json(rows);
     } catch {
