@@ -53,6 +53,26 @@ a {
   color: inherit;
 }
 
+/* A slim, understated scrollbar for small in-page overlays (the address bar dropdown) instead
+   of the browser's default chunky one, which reads as an OS control rather than part of the site. */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 999px;
+}
+
 .quill-content {
   width: 100%;
   max-width: 100%;
