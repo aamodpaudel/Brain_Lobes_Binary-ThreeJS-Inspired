@@ -298,13 +298,17 @@ export function MorphField({
 
             {/* Each settled note is a real, lit sphere — smooth-shaded geometry rather than a
                 sprite, so it stays crisp at any zoom instead of reading as a soft/pixelated
-                blob. Doubles as its own click target, no separate invisible hit-mesh needed. */}
+                blob. A finger is far less precise than a mouse cursor, so the visible sphere
+                alone was too small a target on touch devices — taps routinely missed it and
+                fell through to the canvas's onPointerMissed, which reset the view back to the
+                idle brain. The invisible sphere below is a much larger, purely geometric hit
+                target (depthWrite/depthTest off so it never affects what's actually drawn) that
+                handles all pointer events instead; the visible sphere is purely cosmetic. */}
             {settledScene &&
                 settledScene.nodePositions.map((n) => (
                     <group key={n.id}>
                         <mesh
                             position={n.pos}
-                            scale={hoveredNote === n.id ? 1.18 : 1}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/mind/${settledScene.domainSlug}/${n.slug}`);
@@ -319,6 +323,10 @@ export function MorphField({
                                 document.body.style.cursor = 'auto';
                             }}
                         >
+                            <sphereGeometry args={[NOTE_RADIUS * 2.5, 12, 12]} />
+                            <meshBasicMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
+                        </mesh>
+                        <mesh position={n.pos} scale={hoveredNote === n.id ? 1.18 : 1}>
                             <sphereGeometry args={[NOTE_RADIUS, 24, 24]} />
                             <meshStandardMaterial
                                 color={settledScene.color}
