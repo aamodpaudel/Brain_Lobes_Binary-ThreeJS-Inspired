@@ -128,7 +128,7 @@ export function WindowChrome({
             style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-bg)' }}
         >
             <div
-                className="flex h-14 shrink-0 items-center gap-1.5 border-b px-3 backdrop-blur-md sm:h-12 sm:gap-4 sm:px-4"
+                className="relative z-20 flex h-14 shrink-0 items-center gap-1.5 border-b px-3 backdrop-blur-md sm:h-12 sm:gap-4 sm:px-4"
                 style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--glass-topbar-bg)' }}
             >
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
