@@ -62,7 +62,13 @@ export default function SettingsPage() {
                     </div>
                     <div>
                         <label className={labelClass}>Email</label>
-                        <input className={inputClass} value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+                        <input
+                            className={inputClass}
+                            value={data.email}
+                            onChange={(e) => setData({ ...data, email: e.target.value })}
+                            placeholder="you@example.com, other@example.com"
+                        />
+                        <p className="mt-1 text-xs opacity-60">Shown as a mail icon on the home page. Separate multiple addresses with a comma to show one icon per address.</p>
                     </div>
                 </div>
 
