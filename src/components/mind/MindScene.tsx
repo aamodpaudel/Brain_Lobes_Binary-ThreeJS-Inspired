@@ -196,15 +196,15 @@ export function MindScene() {
                                     .split(/[,;]/)
                                     .map((e) => e.trim())
                                     .filter(Boolean)
-                                    .map((address) => (
+                                    .map((address, i) => (
                                         <a
                                             key={address}
                                             href={`mailto:${address}`}
-                                            aria-label={address}
                                             title={address}
                                             className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100"
                                         >
                                             <Mail size={16} />
+                                            {i === 0 ? 'Primary Email' : i === 1 ? 'Secondary Email' : `Email ${i + 1}`}
                                         </a>
                                     ))}
                             {settings.githubUrl && (
