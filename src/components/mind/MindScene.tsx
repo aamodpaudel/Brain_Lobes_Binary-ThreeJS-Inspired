@@ -239,6 +239,9 @@ export function MindScene() {
                     {!activeOrder && settings.instructionText && (
                         <p className="text-xs italic opacity-60">{settings.instructionText}</p>
                     )}
+                    {Boolean(activeOrder) && noteCount > 0 && (
+                        <p className="text-xs italic opacity-60">Click a note or the circular node to read it.</p>
+                    )}
 
                     <div className="mt-2 flex w-full flex-col items-center gap-8">
                         <div className="flex w-full items-center justify-center gap-3 sm:gap-6">
@@ -269,9 +272,7 @@ export function MindScene() {
                                     ← Back to brain
                                 </button>
                                 <span style={{ color: 'var(--muted)' }}>
-                                    {noteCount === 0
-                                        ? 'No published notes yet'
-                                        : `${noteCount} note${noteCount === 1 ? '' : 's'} — click one in the case to read it`}
+                                    {noteCount === 0 ? 'No published notes yet' : `${noteCount} note${noteCount === 1 ? '' : 's'}`}
                                 </span>
                             </div>
                         )}
