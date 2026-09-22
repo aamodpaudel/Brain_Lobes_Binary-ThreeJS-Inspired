@@ -83,7 +83,7 @@ function AddressBar({ addressPath, pages }: { addressPath: string; pages: Addres
 
             {open && filtered.length > 0 && (
                 <ul
-                    className="absolute left-1/2 top-[calc(100%+4px)] z-20 max-h-56 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto rounded-md border py-1 text-left text-xs shadow-lg"
+                    className="thin-scroll absolute left-1/2 top-[calc(100%+4px)] z-20 max-h-56 w-56 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto rounded-md border py-1 text-left text-xs shadow-lg"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
                 >
                     {filtered.map((p) => (
