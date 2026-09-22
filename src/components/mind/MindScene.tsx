@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, ChevronLeft, ChevronRight, Github, Linkedin, Mail, Twitter } from 'lucide-react';
 import { RichContent } from '../RichContent';
 import { BrainCanvas } from './BrainCanvas';
-import { LocationClock } from './LocationClock';
 import type { DomainGraphData } from './MorphField';
 import { WindowChrome, type AddressBarPage } from './WindowChrome';
 import { useTheme } from '@/lib/useTheme';
@@ -167,7 +166,6 @@ export function MindScene() {
 
     return (
         <div className="min-h-screen w-full px-3 py-6 sm:px-0 sm:py-10" style={{ background: 'var(--background)' }}>
-            <LocationClock />
             <WindowChrome
                 addressPath={activeDomainMeta ? `aamodpaudel.com/${activeDomainMeta.slug}` : 'aamodpaudel.com'}
                 pages={pageOptions}
