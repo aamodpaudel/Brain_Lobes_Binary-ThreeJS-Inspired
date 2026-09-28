@@ -62,6 +62,9 @@ const MORPH_DURATION = 900; // ms
 const SCATTER_RADIUS = 0.55;
 const NEUTRAL_COLOR = new THREE.Color('#9a9a9a');
 const NOTE_RADIUS = 0.0675;
+// How far a pointer may drift between down and up (in screen pixels) and still count as a tap
+// rather than a drag — generous enough to absorb real finger tremor on touch devices.
+const TAP_MAX_MOVEMENT = 16;
 
 interface GLTFNodes {
     [key: string]: THREE.Mesh;
@@ -137,6 +140,7 @@ export function MorphField({
     const [displayOrder, setDisplayOrder] = useState<number | null>(null);
     const [morphing, setMorphing] = useState(false);
     const [hoveredNote, setHoveredNote] = useState<number | null>(null);
+    const pointerDownRef = useRef<{ id: number; x: number; y: number } | null>(null);
 
     const pointsRef = useRef<THREE.Points>(null);
     const materialRef = useRef<THREE.PointsMaterial>(null);
@@ -309,9 +313,27 @@ export function MorphField({
                     <group key={n.id}>
                         <mesh
                             position={n.pos}
-                            onClick={(e) => {
+                            // Tap-vs-drag is detected here ourselves, on pointerdown/up, rather
+                            // than via onClick. CameraControls binds single-finger touch to
+                            // rotate the case, and any movement during a tap — which a real
+                            // finger always has, even a couple of pixels of it — gets consumed
+                            // as the start of that drag. That can suppress the browser's native
+                            // "click" event entirely, which is what onClick depends on, so a
+                            // real tap on a note silently did nothing. onPointerDown/onPointerUp
+                            // are R3F's own independent raycast-per-pointer-event system, so
+                            // they still fire regardless of whether a "click" would have.
+                            onPointerDown={(e) => {
                                 e.stopPropagation();
-                                router.push(`/mind/${settledScene.domainSlug}/${n.slug}`);
+                                pointerDownRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+                            }}
+                            onPointerUp={(e) => {
+                                e.stopPropagation();
+                                const start = pointerDownRef.current;
+                                pointerDownRef.current = null;
+                                if (!start || start.id !== e.pointerId) return;
+                                if (Math.hypot(e.clientX - start.x, e.clientY - start.y) <= TAP_MAX_MOVEMENT) {
+                                    router.push(`/mind/${settledScene.domainSlug}/${n.slug}`);
+                                }
                             }}
                             onPointerOver={(e) => {
                                 e.stopPropagation();
