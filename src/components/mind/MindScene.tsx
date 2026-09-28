@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, ChevronLeft, ChevronRight, Github, Linkedin, Mail, Twitter } from 'lucide-react';
 import { RichContent } from '../RichContent';
@@ -125,7 +126,8 @@ export function MindScene() {
 
     const activeDomainMeta = activeOrder ? domainByOrder(activeOrder) : undefined;
     const activeDomainInfo = activeDomainMeta ? domains.find((d) => d.domain === activeDomainMeta.key) : undefined;
-    const noteCount = activeOrder ? graphs[activeOrder]?.nodes.length ?? 0 : 0;
+    const activeGraph = activeOrder ? graphs[activeOrder] : undefined;
+    const noteCount = activeGraph?.nodes.length ?? 0;
 
     // Keep the browser's real address bar (not the in-app fake one) matching wherever you
     // actually are — previously nothing ever updated it after the initial load, so following a
@@ -272,6 +274,26 @@ export function MindScene() {
                                 <span style={{ color: 'var(--muted)' }}>
                                     {noteCount === 0 ? 'No published notes yet' : `${noteCount} note${noteCount === 1 ? '' : 's'}`}
                                 </span>
+                            </div>
+                        )}
+
+                        {/* The 3D nodes above are the primary way to browse notes, but they're
+                            mouse/touch-only — a real link list here means the exact same notes
+                            are reachable by keyboard and to a screen reader, not just gestured
+                            at as "click a node" with no way to actually do that without a
+                            pointer. */}
+                        {activeGraph && activeGraph.nodes.length > 0 && (
+                            <div className="flex w-full max-w-xl flex-wrap justify-center gap-2">
+                                {activeGraph.nodes.map((n) => (
+                                    <Link
+                                        key={n.id}
+                                        href={`/mind/${activeGraph.domainSlug}/${n.slug}`}
+                                        className="rounded-full border px-3 py-1 text-sm hover:opacity-80"
+                                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
+                                    >
+                                        {n.name}
+                                    </Link>
+                                ))}
                             </div>
                         )}
                     </div>
