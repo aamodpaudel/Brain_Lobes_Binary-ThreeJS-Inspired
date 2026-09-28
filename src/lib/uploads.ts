@@ -127,7 +127,7 @@ export async function createPresignedUpload(filename: string, mimeType: string, 
     const bucket = r2BucketName();
     const publicBase = publicBaseUrl();
     if (!bucket || !publicBase) {
-        throw new UploadError('R2 is only partially configured — check R2_BUCKET_NAME and R2_PUBLIC_URL');
+        throw new UploadError('R2 is only partially configured - check R2_BUCKET_NAME and R2_PUBLIC_URL');
     }
 
     const key = buildKey(filename, subdir);

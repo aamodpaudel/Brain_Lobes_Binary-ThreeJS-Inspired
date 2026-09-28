@@ -103,7 +103,7 @@ export default function GalleryAdminPage() {
             </div>
 
             {photos.length === 0 ? (
-                <p className="opacity-60">No photos yet — upload one above.</p>
+                <p className="opacity-60">No photos yet - upload one above.</p>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {photos.map((photo, i) => (

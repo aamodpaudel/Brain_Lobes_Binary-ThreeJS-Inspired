@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!note || !note.published) return {};
 
     const domainLabel = domainInfo?.label || domainMeta.label;
-    const title = `${note.title} — ${domainLabel}`;
+    const title = `${note.title} - ${domainLabel}`;
     const description = note.summary || `A note on ${domainLabel} from My Mind In A Box.`;
 
     return {

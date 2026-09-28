@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { GalleryGrid } from './GalleryGrid';
 
 export const metadata = {
-    title: 'Gallery — My Mind In A Box',
+    title: 'Gallery - My Mind In A Box',
 };
 
 // Without this, Next statically prerenders this page once at build time (it's a fixed route
