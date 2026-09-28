@@ -86,6 +86,11 @@ export function BrainCanvas({ activeOrder, onLobeClick, graphs }: BrainCanvasPro
             // the browser's default 1x backing resolution, which is what made the case's edges
             // and the notes particles look soft/pixelated on retina screens or when zoomed in.
             dpr={[1, 2]}
+            // A WebGL canvas is otherwise silent to a screen reader — this at least announces
+            // what it is and points to the keyboard-accessible way to reach the same content
+            // (the address bar's page list, and the prev/next buttons) instead of nothing.
+            role="img"
+            aria-label="An interactive 3D brain in a wireframe display case. Use the address bar's page list or the arrow buttons to browse the same content without it."
         >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />

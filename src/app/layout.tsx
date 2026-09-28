@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.aamodpaudel.com.np"),
   title: "My Mind In A Box",
   description: "A personal digital garden of notes on mathematics, physics, neuroscience, philosophy, and AI.",
 };

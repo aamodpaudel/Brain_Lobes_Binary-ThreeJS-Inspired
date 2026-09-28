@@ -1,11 +1,41 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { domainBySlug, DOMAIN_LIST, type DomainKey } from '@/lib/domains';
 import { RichContent } from '@/components/RichContent';
 
 interface PageProps {
     params: Promise<{ domain: string; slug: string }>;
+}
+
+// Without this, every note page inherits the root layout's site-wide title/description, so
+// sharing a specific note's link (e.g. as a writing sample) previewed as generic "My Mind In A
+// Box" text everywhere instead of that note's own title and summary.
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { domain: domainSlug, slug } = await params;
+    const domainMeta = domainBySlug(domainSlug);
+    if (!domainMeta) return {};
+
+    const [note, domainInfo] = await Promise.all([
+        prisma.note.findUnique({
+            where: { domain_slug: { domain: domainMeta.key, slug } },
+            select: { title: true, summary: true, published: true },
+        }),
+        prisma.domainInfo.findUnique({ where: { domain: domainMeta.key }, select: { label: true } }),
+    ]);
+    if (!note || !note.published) return {};
+
+    const domainLabel = domainInfo?.label || domainMeta.label;
+    const title = `${note.title} — ${domainLabel}`;
+    const description = note.summary || `A note on ${domainLabel} from My Mind In A Box.`;
+
+    return {
+        title,
+        description,
+        openGraph: { title, description, type: 'article' },
+        twitter: { card: 'summary', title, description },
+    };
 }
 
 async function getRelatedNotes(noteId: number) {
@@ -21,12 +51,16 @@ export default async function NotePage({ params }: PageProps) {
     const domainMeta = domainBySlug(domainSlug);
     if (!domainMeta) notFound();
 
-    const note = await prisma.note.findUnique({
-        where: { domain_slug: { domain: domainMeta.key, slug } },
-        include: { attachments: { orderBy: { createdAt: 'asc' } } },
-    });
+    const [note, domainInfo] = await Promise.all([
+        prisma.note.findUnique({
+            where: { domain_slug: { domain: domainMeta.key, slug } },
+            include: { attachments: { orderBy: { createdAt: 'asc' } } },
+        }),
+        prisma.domainInfo.findUnique({ where: { domain: domainMeta.key }, select: { label: true } }),
+    ]);
     if (!note || !note.published) notFound();
 
+    const domainLabel = domainInfo?.label || domainMeta.label;
     const isImage = (mimeType: string) => mimeType.startsWith('image/');
     const formatSize = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`);
 
@@ -37,9 +71,9 @@ export default async function NotePage({ params }: PageProps) {
             <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 sm:px-8">
                 <div className="flex items-center justify-between text-sm">
                     <Link href={`/?domain=${domainMeta.slug}`} className="underline opacity-70 hover:opacity-100">
-                        ← Back to {domainMeta.label}
+                        ← Back to {domainLabel}
                     </Link>
-                    <span style={{ color: 'var(--muted)' }}>{domainMeta.label}</span>
+                    <span style={{ color: 'var(--muted)' }}>{domainLabel}</span>
                 </div>
 
                 <div>
